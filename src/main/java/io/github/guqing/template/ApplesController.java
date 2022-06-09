@@ -1,4 +1,4 @@
-package io.github.guqing.apples;
+package io.github.guqing.template;
 
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
