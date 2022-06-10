@@ -1,0 +1,23 @@
+<script lang="ts">
+import { defineComponent } from "vue";
+import logo from "../assets/logo.svg";
+
+export default defineComponent({
+  name: "DefaultView",
+  setup() {
+    return {
+      logo,
+      logoCircle
+    };
+  },
+});
+</script>
+<template>
+  <div class="title">Hello World</div>
+  <img :src="logo" alt="logo" />
+</template>
+<style scoped>
+.title {
+  color: red;
+}
+</style>
