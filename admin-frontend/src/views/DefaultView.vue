@@ -7,7 +7,6 @@ export default defineComponent({
   setup() {
     return {
       logo,
-      logoCircle
     };
   },
 });
