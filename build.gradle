@@ -29,7 +29,7 @@ jar {
 }
 
 dependencies {
-    compileOnly 'io.github.guqing:pluggable-suite:0.0.1-SNAPSHOT'
+    implementation 'io.github.guqing:pluggable-suite:0.0.1-SNAPSHOT'
     compileOnly 'org.springframework.boot:spring-boot-starter-webflux'
     annotationProcessor 'io.github.guqing:pluggable-suite:0.0.1-SNAPSHOT'
 

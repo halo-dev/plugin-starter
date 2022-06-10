@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ReverseProxy
-metadata:
-  name: reverse-proxy-template
-rules:
-  - path: /assets/io.github.guqing.template/**
-    file:
-      directory: static
