@@ -1,4 +1,4 @@
-apiVersion: v1alpha1
+apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
   # The name defines how the plugin is invoked,A unique name
