@@ -8,6 +8,3 @@ rules:
   - path: /static/**
     file:
       directory: static
-  - path: /admin/**
-    file:
-      directory: admin

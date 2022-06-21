@@ -19,7 +19,7 @@ export default defineConfig({
       entry: "src/index.ts",
       name: "PluginTemplate",
       formats: ["iife"],
-      fileName: () => "halo-plugin-template.js",
+      fileName: () => "main.js",
     },
     rollupOptions: {
       external: ["vue", "@halo-dev/shared", "@halo-dev/components"],

@@ -4,13 +4,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
+import run.halo.app.plugin.ApiVersion;
 
 /**
  * @author guqing
  * @since 2.0.0
  */
+@ApiVersion("v1alpha1")
 @RestController
-@RequestMapping("/apis/template.guqing.github.com/v1alpha1/posts")
+@RequestMapping("posts")
 public class PostController {
 
     private final PostService postService;

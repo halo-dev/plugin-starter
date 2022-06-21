@@ -4,6 +4,7 @@ metadata:
   # The name defines how the plugin is invoked,A unique name
   name: io.github.guqing.apples
 spec:
+  enabled: true
   # 'version' is a valid semantic version string (see semver.org).
   version: 0.0.1
   requires: "*"
@@ -15,3 +16,4 @@ spec:
   displayName: "测试插件"
   description: "这是一个用来测试的插件"
   license: MIT
+
