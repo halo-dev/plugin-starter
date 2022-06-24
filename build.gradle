@@ -5,7 +5,7 @@ plugins {
 }
 
 group 'io.github.guqing'
-version '1.0-SNAPSHOT'
+version '0.0.1-SNAPSHOT'
 sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
@@ -21,6 +21,9 @@ bootJar {
 jar {
     enabled = true
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest.attributes(
+            'Plugin-Version': "${project.version}",
+    )
     from {
         configurations.runtimeClasspath.collect {
             it.isDirectory() ? it : zipTree(it)
@@ -29,10 +32,12 @@ jar {
 }
 
 dependencies {
-    compileOnly files("lib/halo-2.0.0-SNAPSHOT-plain.jar")
     implementation 'io.github.guqing:pluggable-suite:0.0.1-SNAPSHOT'
+    compileOnly "io.swagger.core.v3:swagger-core-jakarta:2.2.0"
     compileOnly 'org.springframework.boot:spring-boot-starter-webflux'
     annotationProcessor 'io.github.guqing:pluggable-suite:0.0.1-SNAPSHOT'
+
+    compileOnly files("lib/halo-2.0.0-SNAPSHOT-plain.jar")
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'

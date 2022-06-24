@@ -9,7 +9,7 @@ logs/
 /out/
 !gradle/wrapper/gradle-wrapper.jar
 bin/
-*.jar
+
 ### STS ###
 .apt_generated
 .classpath
