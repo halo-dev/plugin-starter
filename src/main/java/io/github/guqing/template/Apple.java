@@ -16,11 +16,19 @@ import run.halo.app.extension.GVK;
 @EqualsAndHashCode(callSuper = true)
 public class Apple extends AbstractExtension {
 
-    @Schema(required = true, minLength = 1)
-    private String varieties;
+    private AppleSpec spec;
 
-    private String color;
+    @Data
+    public static class AppleSpec {
 
-    private String size;
+        @Schema(required = true, minLength = 1)
+        private String varieties;
+
+        private String color;
+
+        private String size;
+
+        private String producingArea;
+    }
 }
 

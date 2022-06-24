@@ -19,7 +19,7 @@ metadata:
   labels:
     plugin.halo.run/role-template: "true"
   annotations:
-    plugin.halo.run/dependencies: [ "role-template-apple-view" ]
+    plugin.halo.run/dependencies: "[ 'role-template-apple-view' ]"
     plugin.halo.run/module: "Apple Management"
     plugin.halo.run/alias-name: "苹果管理"
 rules:
