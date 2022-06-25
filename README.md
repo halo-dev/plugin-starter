@@ -274,7 +274,7 @@ pnpm run build
 
 #### 构建后端
 
-1. 开发时可以使用 `command + F9/ctrl + F9`
+1. 开发时可以使用 `command + F9 / ctrl + F9`
 
 2. 生产时：点击 `gradle` 的 `build`
 
@@ -284,4 +284,4 @@ pnpm run build
 ./gradlew -x build
 ```
 
-然后只需复制例如`build/libs/halo-plugin-template-1.0-SNAPSHOT-plain.jar` 的 `jar` 包即可使用
+然后只需复制例如`build/libs/halo-plugin-template-0.0.1-SNAPSHOT-plain.jar` 的 `jar` 包即可使用
