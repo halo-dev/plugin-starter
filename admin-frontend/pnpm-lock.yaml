@@ -1,8 +1,8 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@halo-dev/admin-shared': link:/Users/ryanwang/Workspace/github/ruibaby/halo-admin-next/packages/shared
-  '@halo-dev/components': link:/Users/ryanwang/Workspace/github/ruibaby/halo-admin-next/packages/components
+  '@halo-dev/admin-shared': link:/Users/ryanwang/Workspace/github/halo-dev/halo-admin-next/packages/shared
+  '@halo-dev/components': link:/Users/ryanwang/Workspace/github/halo-dev/halo-admin-next/packages/components
   '@rushstack/eslint-patch': ^1.1.0
   '@types/jsdom': ^16.2.14
   '@types/node': ^16.11.36
@@ -24,8 +24,8 @@ specifiers:
   vue-tsc: ^0.35.2
 
 dependencies:
-  '@halo-dev/admin-shared': link:../../../ruibaby/halo-admin-next/packages/shared
-  '@halo-dev/components': link:../../../ruibaby/halo-admin-next/packages/components
+  '@halo-dev/admin-shared': link:../../../halo-dev/halo-admin-next/packages/shared
+  '@halo-dev/components': link:../../../halo-dev/halo-admin-next/packages/components
   vue: 3.2.37
 
 devDependencies:
