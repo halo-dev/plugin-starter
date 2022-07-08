@@ -1,4 +1,4 @@
-name: Build Plugin JAR
+name: Build Plugin JAR File
 
 on:
   push:
@@ -44,10 +44,10 @@ jobs:
       - name: Build with Gradle
         run: |
           ./gradlew clean build -x test
-      - name: Archive plugin-links jar
+      - name: Archive halo-plugin-template jar
         uses: actions/upload-artifact@v2
         with:
-          name: halo-plugin-template.jar
+          name: halo-plugin-template
           path: |
             build/libs/*-plain.jar
           retention-days: 1
