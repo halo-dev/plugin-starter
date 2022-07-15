@@ -1,5 +1,5 @@
 <script lang="ts">
-import { defineComponent } from "vue";
+import {defineComponent} from "vue";
 import logo from "../assets/logo.svg";
 
 export default defineComponent({
@@ -13,7 +13,7 @@ export default defineComponent({
 </script>
 <template>
   <div class="title">Hello World</div>
-  <img :src="logo" alt="logo" />
+  <img v-permission="['plugin:apples:view']" :src="logo" alt="logo"/>
 </template>
 <style scoped>
 .title {

@@ -1,4 +1,4 @@
-package io.github.guqing.template;
+package run.halo.template;
 
 import org.pf4j.PluginWrapper;
 import run.halo.app.extension.Scheme;
@@ -9,10 +9,10 @@ import run.halo.app.plugin.BasePlugin;
  * @author guqing
  * @since 2.0.0
  */
-public class ApplePlugin extends BasePlugin {
+public class TemplatePlugin extends BasePlugin {
     private final SchemeManager schemeManager;
 
-    public ApplePlugin(PluginWrapper wrapper) {
+    public TemplatePlugin(PluginWrapper wrapper) {
         super(wrapper);
         this.schemeManager = getApplicationContext().getBean(SchemeManager.class);
     }

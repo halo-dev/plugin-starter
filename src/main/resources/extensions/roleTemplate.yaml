@@ -6,7 +6,7 @@ metadata:
     halo.run/role-template: "true"
   annotations:
     rbac.authorization.halo.run/module: "Apple Management"
-    rbac.authorization.halo.run/ui-permissions: "[\"apples:view\"]"
+    rbac.authorization.halo.run/ui-permissions: "[\"plugin:apples:view\"]"
     rbac.authorization.halo.run/display-name: "苹果查看"
 rules:
   - apiGroups: [ "plugins.api.halo.run" ]
@@ -21,7 +21,7 @@ metadata:
     halo.run/role-template: "true"
   annotations:
     rbac.authorization.halo.run/dependencies: "[\"role-template-apple-view\"]"
-    rbac.authorization.halo.run/ui-permissions: "[\"apples:delete\",\"apples:update\"]"
+    rbac.authorization.halo.run/ui-permissions: "[\"plugin:apples:delete\",\"plugin:apples:update\"]"
     rbac.authorization.halo.run/module: "Apple Management"
     rbac.authorization.halo.run/display-name: "苹果管理"
 rules:

@@ -44,10 +44,10 @@ jobs:
       - name: Build with Gradle
         run: |
           ./gradlew clean build -x test
-      - name: Archive halo-plugin-template jar
+      - name: Archive plugin-template jar
         uses: actions/upload-artifact@v2
         with:
-          name: halo-plugin-template
+          name: plugin-template
           path: |
             build/libs/*-plain.jar
           retention-days: 1

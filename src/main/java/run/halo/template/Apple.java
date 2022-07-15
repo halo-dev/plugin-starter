@@ -1,4 +1,4 @@
-package io.github.guqing.template;
+package run.halo.template;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
@@ -11,7 +11,7 @@ import run.halo.app.extension.GVK;
  * @since 2.0.0
  */
 @GVK(group = "apple.guqing.xyz", kind = "Apple",
-    version = "v1alpha1", singular = "apple", plural = "apples")
+        version = "v1alpha1", singular = "apple", plural = "apples")
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class Apple extends AbstractExtension {

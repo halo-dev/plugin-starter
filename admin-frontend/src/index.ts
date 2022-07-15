@@ -11,6 +11,9 @@ export default definePlugin({
       path: "/hello-world",
       name: "HelloWorld",
       component: DefaultView,
+      meta: {
+        permissions: ["plugin:apples:view"],
+      },
     },
   ],
   menus: [
@@ -26,10 +29,6 @@ export default definePlugin({
     },
   ],
   extensionPoints: {},
-  activated() {
-    // TODO
-  },
-  deactivated() {
-    // TODO
-  },
+  activated() {},
+  deactivated() {},
 });

@@ -5,12 +5,12 @@ plugins {
     id 'java'
 }
 
-group 'io.github.guqing'
+group 'run.halo.template'
 version '0.0.1-SNAPSHOT'
 sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
-    maven {url 'https://s01.oss.sonatype.org/content/repositories/snapshots'}
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots' }
     maven { url 'https://repo.spring.io/milestone' }
     mavenCentral()
 }
@@ -60,7 +60,7 @@ task buildFrontend(type: NpxTask) {
     args = ['build']
 }
 
-task pnpmInstall (type: NpxTask) {
+task pnpmInstall(type: NpxTask) {
     command = "pnpm"
     args = ["install"]
 }
