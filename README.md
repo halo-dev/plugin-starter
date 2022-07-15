@@ -262,7 +262,7 @@ Halo 2.0 插件开发快速开始模板（WIP）
 
 ### 环境要求
 
-- openJDK 17
+- OpenJDK 17
 - NodeJS 16+
 - pnpm 7+
 
