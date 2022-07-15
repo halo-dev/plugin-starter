@@ -2,14 +2,7 @@
 
 Halo 2.0 插件开发快速开始模板（WIP）
 
-## 如何开发一个 Halo 插件
-
-前期准备：
-
-1. 使用此仓库作为模版创建仓库
-2. 克隆新创建好的仓库到本地
-
-### 项目结构介绍
+## 项目结构介绍
 
 ```text
 .
@@ -265,15 +258,15 @@ Halo 2.0 插件开发快速开始模板（WIP）
 
 更多详情参考：[Halo security RFC](https://github.com/halo-dev/rfcs/blob/main/identity/002-security.md)
 
-### 开发环境
+## 开发环境
 
-#### 环境要求
+### 环境要求
 
 - openJDK 17
 - NodeJS 16+
 - pnpm 7+
 
-#### 拉取 Halo 相关项目源码
+### 拉取 Halo 相关项目源码
 
 ```bash
 mkdir ./halo-dev
@@ -297,7 +290,7 @@ cd ./dev-plugins
 git clone https://github.com/halo-sigs/plugin-template
 ```
 
-#### Halo 配置文件修改
+### Halo 配置文件修改
 
 修改 halo/src/resources/application-dev.yaml
 
@@ -324,7 +317,7 @@ halo:
     - "/Users/ryanwang/Workspace/github/ruibaby/halo-dev/dev-plugins/plugin-template/src/main/resources/plugin.yaml"
 ```
 
-#### 编译插件
+### 编译插件
 
 下载前端依赖：
 
@@ -348,7 +341,7 @@ cd ./halo-dev/dev-plugins/plugin-template
 ./gradlew build
 ```
 
-#### 启动 Halo
+### 启动 Halo
 
 ```bash
 cd ./halo-dev/halo
@@ -362,7 +355,7 @@ cd ./halo-dev/halo
 
 或者在 IntelliJ IDEA 中运行 Application 启动类。但注意需要配置好 `spring.profiles.active` 为 dev。
 
-#### 启动 Halo Admin
+### 启动 Halo Admin
 
 ```bash
 cd ./halo-dev/halo-admin
@@ -372,18 +365,18 @@ pnpm install
 pnpm dev
 ```
 
-#### 访问后台
+### 访问后台
 
 在浏览器中访问 https://localhost:3000 即可，登录用户名和密码为上方 `application-dev.yaml` 配置中的 `super-admin-username`
 和 `super-admin-password`。
 
 然后在左侧菜单中选择 `插件`，即可查看所有插件的状态。
 
-#### 开发
+### 开发
 
 修改前端代码或者后端代码，然后运行 `./gradlew.bat build` 或者 `./gradlew build`（macOS/Linux）即可构建插件，无需重启 Halo。但修改配置文件后需要 build 插件以及重启 Halo。
 
-### 构建生产产物
+## 构建生产产物
 
 ```
 ./gradlew -x build
