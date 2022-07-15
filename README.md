@@ -360,7 +360,9 @@ cd ./halo-dev/halo
 ```bash
 cd ./halo-dev/halo-admin
 
-pnpm install 
+pnpm install
+
+pnpm build:packages
 
 pnpm dev
 ```
