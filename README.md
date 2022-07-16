@@ -292,7 +292,7 @@ git clone https://github.com/halo-sigs/plugin-template
 
 ### Halo 配置文件修改
 
-修改 halo/src/resources/application-dev.yaml
+修改 halo/src/main/resources/application-dev.yaml
 
 ```yaml
 halo:
@@ -346,7 +346,7 @@ cd ./halo-dev/dev-plugins/plugin-template
 ```bash
 cd ./halo-dev/halo
 
-./graldew.bat bootRun --args="--spring.profiles.active=dev"
+./gradlew.bat bootRun --args="--spring.profiles.active=dev"
 
 # or macOS/Linux
 
