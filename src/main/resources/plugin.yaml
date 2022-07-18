@@ -10,7 +10,6 @@ spec:
   requires: "*"
   author: halo-dev
   logo: https://halo.run/logo
-  pluginClass: run.halo.template.TemplatePlugin
   settingName: template-settings
   configMapName: template-settings
   # 'homepage' usually links to the GitHub repository of the plugin
