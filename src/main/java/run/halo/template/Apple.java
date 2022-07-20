@@ -10,7 +10,7 @@ import run.halo.app.extension.GVK;
  * @author guqing
  * @since 2.0.0
  */
-@GVK(group = "apple.guqing.xyz", kind = "Apple",
+@GVK(group = "run.halo.template", kind = "Apple",
         version = "v1alpha1", singular = "apple", plural = "apples")
 @Data
 @EqualsAndHashCode(callSuper = true)
