@@ -1,4 +1,4 @@
-package run.halo.template;
+package run.halo.starter;
 
 import org.pf4j.PluginWrapper;
 import org.springframework.stereotype.Component;
@@ -11,10 +11,10 @@ import run.halo.app.plugin.BasePlugin;
  * @since 2.0.0
  */
 @Component
-public class TemplatePlugin extends BasePlugin {
+public class StarterPlugin extends BasePlugin {
     private final SchemeManager schemeManager;
 
-    public TemplatePlugin(PluginWrapper wrapper) {
+    public StarterPlugin(PluginWrapper wrapper) {
         super(wrapper);
         this.schemeManager = getApplicationContext().getBean(SchemeManager.class);
     }

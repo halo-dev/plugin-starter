@@ -1,7 +1,7 @@
 apiVersion: v1alpha1
 kind: Setting
 metadata:
-  name: template-settings
+  name: starter-settings
 spec:
   - group: basic
     label: 基本设置

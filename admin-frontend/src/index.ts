@@ -4,7 +4,7 @@ import { IconGrid } from "@halo-dev/components";
 import "./styles/index.css";
 
 export default definePlugin({
-  name: "PluginTemplate",
+  name: "PluginStarter",
   components: [],
   routes: [
     {
@@ -24,7 +24,7 @@ export default definePlugin({
   ],
   menus: [
     {
-      name: "From PluginTemplate",
+      name: "From PluginStarter",
       items: [
         {
           name: "HelloWorld",

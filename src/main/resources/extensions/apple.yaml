@@ -1,4 +1,4 @@
-apiVersion: run.halo.template/v1alpha1
+apiVersion: run.halo.starter/v1alpha1
 kind: Apple
 metadata:
   name: Fuji-apple

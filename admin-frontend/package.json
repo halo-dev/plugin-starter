@@ -1,5 +1,5 @@
 {
-  "name": "@halo-dev/plugin-frontend-template",
+  "name": "@halo-dev/plugin-starter",
   "version": "0.0.0",
   "private": true,
   "scripts": {

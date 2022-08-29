@@ -44,10 +44,10 @@ jobs:
       - name: Build with Gradle
         run: |
           ./gradlew clean build -x test
-      - name: Archive plugin-template jar
+      - name: Archive plugin-starter jar
         uses: actions/upload-artifact@v2
         with:
-          name: plugin-template
+          name: plugin-starter
           path: |
             build/libs/*-plain.jar
           retention-days: 1
