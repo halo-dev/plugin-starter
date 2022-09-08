@@ -318,9 +318,8 @@ halo:
       - "build/resources"
     lib-directories:
       - "libs"
-    plugins-root: /Users/ryanwang/Workspace/github/ruibaby/halo-dev/dev-plugins # 修改为上方存放插件源码的实际目录
-  initial-extension-locations: # 初始化资源加载配置，需要配置当前开发中插件的资源目录或者文件
-    - "/Users/ryanwang/Workspace/github/ruibaby/halo-dev/dev-plugins/plugin-template/src/main/resources/plugin.yaml"
+    fixedPluginPath: 
+      - "/Users/ryanwang/Workspace/github/ruibaby/halo-dev/dev-plugins/plugin-template"
 ```
 
 ### 编译插件
