@@ -9,7 +9,7 @@
 - OpenJDK 17
 - NodeJS 16+
 - pnpm 7+
-- docker
+- Docker
 - Docker Compose
 
 ### 编译插件
