@@ -10,7 +10,7 @@
 - NodeJS 16+
 - pnpm 7+
 - docker
-- docker-compose
+- Docker Compose
 
 ### 编译插件
 
