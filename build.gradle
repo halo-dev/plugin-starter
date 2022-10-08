@@ -6,7 +6,7 @@ plugins {
     id 'java'
 }
 
-group 'run.halo.template'
+group 'run.halo.starter'
 version '0.0.1-SNAPSHOT'
 sourceCompatibility = JavaVersion.VERSION_17
 

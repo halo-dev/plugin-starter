@@ -19,7 +19,7 @@ export default defineConfig({
     emptyOutDir: true,
     lib: {
       entry: "src/index.ts",
-      name: "PluginTemplate",
+      name: "PluginStarter",
       formats: ["iife"],
       fileName: () => "main.js",
     },

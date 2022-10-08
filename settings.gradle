@@ -7,5 +7,5 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = 'plugin-template'
+rootProject.name = 'plugin-starter'
 
