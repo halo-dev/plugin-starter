@@ -1,4 +1,4 @@
-import { definePlugin, BasicLayout } from "@halo-dev/admin-shared";
+import { definePlugin, BasicLayout } from "@halo-dev/console-shared";
 import DefaultView from "./views/DefaultView.vue";
 import { IconGrid } from "@halo-dev/components";
 import "./styles/index.css";
