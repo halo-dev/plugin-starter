@@ -69,3 +69,5 @@ nbdist/
 application-local.yml
 application-local.yaml
 application-local.properties
+
+/admin-frontend/node_modules/

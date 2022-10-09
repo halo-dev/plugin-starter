@@ -8,7 +8,7 @@ Halo 2.0 插件开发快速开始模板（WIP）
 .
 ├── LICENSE
 ├── README.md
-├── admin-frontend
+├── console 
 │   ├── README.md
 │   ├── env.d.ts
 │   ├── package.json
@@ -18,7 +18,7 @@ Halo 2.0 插件开发快速开始模板（WIP）
 │   │   │   └── logo.svg
 │   │   ├── components
 │   │   │   └── HelloWorld.vue
-│   │   ├── index.ts                                        # Admin Frontend Entry file
+│   │   ├── index.ts                                        # Console Frontend Entry file
 │   │   ├── styles
 │   │   │   └── index.css
 │   │   └── views
@@ -48,8 +48,8 @@ Halo 2.0 插件开发快速开始模板（WIP）
         │               ├── ApplesController.java
         │               └── TemplatePlugin.java                     # Main Class
         └── resources
-            ├── admin
-            │   ├── main.js                                         # Admin Frontend Entry file(production build)
+            ├── console
+            │   ├── main.js                                         # Console Frontend Entry file(production build)
             │   └── style.css
             ├── extensions
             │   ├── apple.yaml                                  
@@ -65,7 +65,7 @@ Halo 2.0 插件开发快速开始模板（WIP）
 
 对于以上目录树：
 
-- `admin-frontend`： 插件前端项目目录，为一个 Vue 项目，技术栈为 Vue 3 + Vite，其中已经预配置好了构建策略。
+- `console`： 插件前端项目目录，为一个 Vue 项目，技术栈为 Vue 3 + Vite，其中已经预配置好了构建策略。
 - `build`：插件后端构建目录，`build/libs` 下的 jar 包为最终插件产物。
 - `lib`：为临时的 Halo 依赖，为了使用 Halo 中提供的类在 `build.gradle`
   中作为编译时依赖引入 `compileOnly files("lib/halo-2.0.0-SNAPSHOT-plain.jar")`
@@ -184,7 +184,7 @@ Halo 2.0 插件开发快速开始模板（WIP）
   ```
 
 - `resources`：目录为插件资源目录
-    - `admin` 目录下为插件前端打包后的产物存放目录，固定为 `main.js` 和 `style.css `两个文件
+    - `console` 目录下为插件前端打包后的产物存放目录，固定为 `main.js` 和 `style.css `两个文件
     - `extensions` 存放自定义模型资源配置
     - `plugin.yaml`为插件描述配置
     - `static` 为静态资源示例目录
@@ -283,11 +283,11 @@ mkdir ./halo-dev/dev-plugins # 存放插件源码
 ```bash
 cd ./halo-dev
 
-git clone https://github.com/halo-dev/halo --branch next
+git clone https://github.com/halo-dev/halo --branch main
 ```
 
 ```bash
-git clone https://github.com/halo-dev/halo-admin --branch next
+git clone https://github.com/halo-dev/console --branch main
 ```
 
 ```bash
@@ -360,10 +360,10 @@ cd ./halo-dev/halo
 
 或者在 IntelliJ IDEA 中运行 Application 启动类。但注意需要配置好 `spring.profiles.active` 为 dev。
 
-### 启动 Halo Admin
+### 启动 Console 
 
 ```bash
-cd ./halo-dev/halo-admin
+cd ./halo-dev/console
 
 pnpm install
 
