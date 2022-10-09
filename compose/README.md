@@ -17,7 +17,7 @@
 下载前端依赖：
 
 ```bash
-cd ./plugin-template
+cd ./plugin-starter
 
 ./gradlew.bat pnpmInstall
 
@@ -36,17 +36,17 @@ cd ./plugin-template
 ./gradlew build
 ```
 
-### 启动 Halo 
+### 启动 Halo
 
 ```bash
-cd plugin-template/compose
+cd plugin-starter/compose
 docker-compose up -d
 docker-compose ps
 ```
 
 ### 访问后台
 
-在浏览器中访问 https://localhost/admin 即可，登录用户名和密码为当前目录中 `application-dev.yaml` 配置中的 `super-admin-username`
+在浏览器中访问 <https://localhost:8090/console> 即可，登录用户名和密码为当前目录中 `application-dev.yaml` 配置中的 `super-admin-username`
 和 `super-admin-password`。
 
 然后在左侧菜单中选择 `插件`，即可查看所有插件的状态。
