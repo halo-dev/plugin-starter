@@ -6,7 +6,7 @@ metadata:
 spec:
   enabled: true
   # 'version' is a valid semantic version string (see semver.org).
-  version: 0.0.1-SNAPSHOT
+  version: 1.0.0-SNAPSHOT
   requires: "*"
   author: halo-dev
   logo: https://halo.run/logo
