@@ -43,10 +43,10 @@ Halo 2.0 插件开发快速开始模板（WIP）
         ├── java
         │   └── run
         │       └── halo
-        │           └── template
+        │           └── starter
         │               ├── Apple.java
         │               ├── ApplesController.java
-        │               └── TemplatePlugin.java                     # Main Class
+        │               └── StarterPlugin.java                     # Main Class
         └── resources
             ├── console
             │   ├── main.js                                         # Console Frontend Entry file(production build)
@@ -105,7 +105,7 @@ Halo 2.0 插件开发快速开始模板（WIP）
   方法中注册自定义模型，这一步必不可少，所有定义的自定义模型都需要在此注册，并在 `stop()` 生命周期方法中清理资源。
 
   ```java
-  public class TemplatePlugin extends BasePlugin {
+  public class StarterPlugin extends BasePlugin {
       // ...
   
       @Override
@@ -293,7 +293,7 @@ git clone https://github.com/halo-dev/console --branch main
 ```bash
 cd ./dev-plugins
 
-git clone https://github.com/halo-sigs/plugin-template
+git clone https://github.com/halo-dev/plugin-starter
 ```
 
 ### Halo 配置文件修改
@@ -319,7 +319,7 @@ halo:
     lib-directories:
       - "libs"
     fixedPluginPath: 
-      - "/Users/ryanwang/Workspace/github/ruibaby/halo-dev/dev-plugins/plugin-template"
+      - "/path/to/plugin-starter"
 ```
 
 ### 编译插件
@@ -327,7 +327,7 @@ halo:
 下载前端依赖：
 
 ```bash
-cd ./halo-dev/dev-plugins/plugin-template
+cd ./halo-dev/dev-plugins/plugin-starter
 
 ./gradlew.bat pnpmInstall
 
@@ -390,4 +390,4 @@ Halo。但修改配置文件后需要 build 插件以及重启 Halo。
 ./gradlew -x build
 ```
 
-然后只需复制例如`build/libs/plugin-template-0.0.1-SNAPSHOT-plain.jar` 的 `jar` 包即可使用。
+然后只需复制例如`build/libs/plugin-starter-0.0.1-SNAPSHOT-plain.jar` 的 `jar` 包即可使用。
