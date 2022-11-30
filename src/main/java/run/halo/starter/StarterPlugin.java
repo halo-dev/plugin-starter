@@ -12,21 +12,18 @@ import run.halo.app.plugin.BasePlugin;
  */
 @Component
 public class StarterPlugin extends BasePlugin {
-    private final SchemeManager schemeManager;
 
-    public StarterPlugin(PluginWrapper wrapper, SchemeManager schemeManager) {
+    public StarterPlugin(PluginWrapper wrapper) {
         super(wrapper);
-        this.schemeManager = schemeManager;
     }
 
     @Override
     public void start() {
-        schemeManager.register(Apple.class);
+        System.out.println("插件启动成功！");
     }
 
     @Override
     public void stop() {
-        Scheme scheme = schemeManager.get(Apple.class);
-        schemeManager.unregister(scheme);
+        System.out.println("插件停止！");
     }
 }

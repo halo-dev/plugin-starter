@@ -37,6 +37,7 @@ export default defineConfig({
           "@halo-dev/components": "HaloComponents",
           "@halo-dev/console-shared": "HaloConsoleShared",
         },
+        extend: true,
       },
     },
   },
