@@ -1,6 +1,6 @@
 {
   "name": "@halo-dev/plugin-starter",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "vite build --watch",
@@ -11,8 +11,8 @@
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore"
   },
   "dependencies": {
-    "@halo-dev/components": "^0.0.0-alpha.5",
-    "@halo-dev/console-shared": "^2.0.0-alpha.3",
+    "@halo-dev/components": "^1.0.0",
+    "@halo-dev/console-shared": "^2.0.0",
     "vue": "^3.2.41"
   },
   "devDependencies": {
