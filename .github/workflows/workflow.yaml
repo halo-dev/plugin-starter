@@ -49,9 +49,27 @@ jobs:
           # Set the version with tag name when releasing
           version=${{ github.event.release.tag_name }}
           version=${version#v}
-          \sed -i "s#^version=.*#version=$version#gi" gradle.properties
-          \sed -i "s#^\s\sversion:.*#  version: $version#gi" src/main/resources/plugin.yaml
-          \sed -i "s#^  \"version\": \".*\",#  \"version\": \"$version\",#gi" console/package.json
+
+          if [ -f gradle.properties ]; then
+            \sed -i "s#^version=.*#version=$version#gi" gradle.properties
+          fi
+
+          if [ -f src/main/resources/plugin.yaml ]; then
+            \sed -i "s#^\s\sversion:.*#  version: $version#gi" src/main/resources/plugin.yaml
+          fi
+
+          if [ -f console/package.json ]; then
+            \sed -i "s#^  \"version\": \".*\",#  \"version\": \"$version\",#gi" console/package.json
+          fi
+
+          if [ -f package.json ]; then
+            \sed -i "s#^  \"version\": \".*\",#  \"version\": \"$version\",#gi" package.json
+          fi
+
+          if [ -f widget/package.json ]; then
+            \sed -i "s#^  \"version\": \".*\",#  \"version\": \"$version\",#gi" widget/package.json
+          fi
+
           ./gradlew clean build -x test
       - name: Archive plugin-starter jar
         uses: actions/upload-artifact@v2
