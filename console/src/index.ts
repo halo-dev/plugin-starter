@@ -23,7 +23,7 @@ export default definePlugin({
                 title: "HelloWorld",
                 searchable: true,
                 menu: {
-                  name: "迁移",
+                  name: "PluginStarter",
                   group: "From PluginStarter",
                   icon: markRaw(IconGrid),
                   priority: 0,

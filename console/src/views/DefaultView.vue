@@ -12,11 +12,20 @@ export default defineComponent({
 });
 </script>
 <template>
-  <div class="title">Hello World</div>
-  <img v-permission="['plugin:apples:view']" :src="logo" alt="logo"/>
+  <div class="app">
+    <div class="title">Hello World</div>
+    <img v-permission="['plugin:apples:view']" :src="logo" alt="logo"/>
+  </div>
 </template>
 <style scoped>
+.app {
+  background-color: #fff;
+  width: 100%;
+}
 .title {
   color: red;
+}
+img {
+  width: 64px;
 }
 </style>
