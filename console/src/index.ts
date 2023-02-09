@@ -1,42 +1,34 @@
-import {definePlugin} from "@halo-dev/console-shared";
-import DefaultView from "./views/DefaultView.vue";
-import {IconGrid} from "@halo-dev/components";
-import "./styles/index.css";
-import {markRaw} from "vue";
+import { definePlugin } from "@halo-dev/console-shared";
+import HomeView from "./views/HomeView.vue";
+import { IconPlug } from "@halo-dev/components";
+import { markRaw } from "vue";
 
 export default definePlugin({
-  name: "PluginStarter",
-  components: [],
+  components: {},
   routes: [
     {
       parentName: "Root",
-      route:
-        {
-          path: "/hello-world",
-          children: [
-            {
-              path: "",
-              name: "HelloWorld",
-              component: DefaultView,
-              meta: {
-                permissions: ["plugin:apples:view"],
-                title: "HelloWorld",
-                searchable: true,
-                menu: {
-                  name: "PluginStarter",
-                  group: "From PluginStarter",
-                  icon: markRaw(IconGrid),
-                  priority: 0,
-                },
+      route: {
+        path: "/example",
+        children: [
+          {
+            path: "",
+            name: "Example",
+            component: HomeView,
+            meta: {
+              title: "示例页面",
+              searchable: true,
+              menu: {
+                name: "示例页面",
+                group: "示例分组",
+                icon: markRaw(IconPlug),
+                priority: 0,
               },
             },
-          ],
-        },
-    }
+          },
+        ],
+      },
+    },
   ],
   extensionPoints: {},
-  activated() {
-  },
-  deactivated() {
-  },
 });
