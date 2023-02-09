@@ -12,8 +12,6 @@ spec:
     name: Halo OSS Team
     website: https://github.com/halo-dev
   logo: https://halo.run/logo
-  settingName: starter-settings
-  configMapName: starter-settings
   # 'homepage' usually links to the GitHub repository of the plugin
   homepage: https://github.com/halo-dev/plugin-starter
   # 'displayName' explains what the plugin does in only a few words
