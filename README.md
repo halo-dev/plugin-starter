@@ -40,11 +40,6 @@ cd path/to/plugin-starter
 halo:
   plugin:
     runtime-mode: development
-    classes-directories:
-      - "build/classes"
-      - "build/resources"
-    lib-directories:
-      - "libs"
     fixedPluginPath:
       - "/path/to/plugin-starter"
 ```
