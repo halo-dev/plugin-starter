@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id "com.github.node-gradle.node" version "3.3.0"
+    id "io.freefair.lombok" version "8.0.1"
     id "io.github.guqing.plugin-development" version "0.0.6-SNAPSHOT"
 }
 
@@ -29,8 +30,6 @@ dependencies {
     implementation platform('run.halo.tools.platform:plugin:2.5.0-SNAPSHOT')
     compileOnly 'run.halo.app:api'
 
-    compileOnly 'org.projectlombok:lombok:1.18.26'
-    annotationProcessor 'org.projectlombok:lombok:1.18.26'
     testImplementation 'run.halo.app:api'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
