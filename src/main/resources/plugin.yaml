@@ -5,8 +5,6 @@ metadata:
   name: PluginStarter
 spec:
   enabled: true
-  # 'version' is a valid semantic version string (see semver.org).
-  version: 1.0.0-SNAPSHOT
   requires: ">=2.5.0"
   author:
     name: Halo OSS Team
