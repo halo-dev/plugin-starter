@@ -1,24 +1,23 @@
 plugins {
+    id 'java'
     id "com.github.node-gradle.node" version "3.3.0"
     id "io.github.guqing.plugin-development" version "0.0.6-SNAPSHOT"
-    id 'java'
 }
 
 group 'run.halo.starter'
 sourceCompatibility = JavaVersion.VERSION_17
 
 repositories {
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/releases' }
-    maven { url 'https://repo.spring.io/milestone' }
     mavenCentral()
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/releases' }
+    maven { url 'https://s01.oss.sonatype.org/content/repositories/snapshots/' }
+    maven { url 'https://repo.spring.io/milestone' }
 }
 
 jar {
     enabled = true
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest.attributes(
-            'Plugin-Version': "${project.version}",
-    )
+    manifest.attributes('Plugin-Version': "${project.version}",)
     from {
         configurations.runtimeClasspath.collect {
             it.isDirectory() ? it : zipTree(it)
@@ -27,15 +26,13 @@ jar {
 }
 
 dependencies {
-    compileOnly platform("run.halo.dependencies:halo-dependencies:1.0.0")
+    implementation platform('run.halo.tools.platform:plugin:2.5.0-SNAPSHOT')
+    compileOnly 'run.halo.app:api'
 
-    compileOnly files("lib/halo-2.0.0-SNAPSHOT-plain.jar")
-
-    compileOnly 'org.projectlombok:lombok:1.18.22'
-    annotationProcessor 'org.projectlombok:lombok:1.18.22'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
+    compileOnly 'org.projectlombok:lombok:1.18.26'
+    annotationProcessor 'org.projectlombok:lombok:1.18.26'
+    testImplementation 'run.halo.app:api'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 test {

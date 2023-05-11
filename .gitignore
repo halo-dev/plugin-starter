@@ -72,3 +72,4 @@ application-local.properties
 
 /admin-frontend/node_modules/
 /workplace/
+/src/main/resources/console/
