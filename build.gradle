@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id "com.github.node-gradle.node" version "3.3.0"
     id "io.freefair.lombok" version "8.0.1"
-    id "run.halo.plugin.devtools" version "0.0.3"
+    id "run.halo.plugin.devtools" version "0.0.4"
 }
 
 group 'run.halo.starter'
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-    implementation platform('run.halo.tools.platform:plugin:2.5.0-SNAPSHOT')
+    implementation platform('run.halo.tools.platform:plugin:2.6.0-SNAPSHOT')
     compileOnly 'run.halo.app:api'
 
     testImplementation 'run.halo.app:api'
