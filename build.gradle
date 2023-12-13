@@ -35,6 +35,10 @@ task buildFrontend(type: PnpmTask) {
     args = ['build']
 }
 
+tasks.withType(JavaCompile).configureEach {
+options.encoding = "UTF-8"
+}
+
 build {
     // build frontend before build
     tasks.getByName('compileJava').dependsOn('buildFrontend')
