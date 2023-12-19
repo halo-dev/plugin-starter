@@ -32,7 +32,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 node {
-    nodeProjectDir = file("${project.projectDir}/console")
+    nodeProjectDir = file("${project.projectDir}/ui")
 }
 
 task buildFrontend(type: PnpmTask) {
