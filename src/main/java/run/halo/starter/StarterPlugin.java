@@ -1,8 +1,8 @@
 package run.halo.starter;
 
-import org.pf4j.PluginWrapper;
 import org.springframework.stereotype.Component;
 import run.halo.app.plugin.BasePlugin;
+import run.halo.app.plugin.PluginContext;
 
 /**
  * <p>Plugin main class to manage the lifecycle of the plugin.</p>
@@ -15,8 +15,8 @@ import run.halo.app.plugin.BasePlugin;
 @Component
 public class StarterPlugin extends BasePlugin {
 
-    public StarterPlugin(PluginWrapper wrapper) {
-        super(wrapper);
+    public StarterPlugin(PluginContext pluginContext) {
+        super(pluginContext);
     }
 
     @Override
