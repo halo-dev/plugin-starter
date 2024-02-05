@@ -2,14 +2,14 @@ apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
   # The name defines how the plugin is invoked,A unique name
-  name: PluginStarter
+  name: starter
 spec:
   enabled: true
-  requires: ">=2.5.0"
+  requires: ">=2.11.0"
   author:
-    name: Halo OSS Team
+    name: Halo
     website: https://github.com/halo-dev
-  logo: https://halo.run/logo
+  logo: logo.png
   # 'homepage' usually links to the GitHub repository of the plugin
   homepage: https://github.com/halo-dev/plugin-starter
   # 'displayName' explains what the plugin does in only a few words
