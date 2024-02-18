@@ -6,11 +6,11 @@ settings:
 
 dependencies:
   '@halo-dev/components':
-    specifier: ^1.10.0
-    version: 1.10.0(vue-router@4.2.5)(vue@3.3.12)
+    specifier: ^2.12.0
+    version: 2.12.0(vue-router@4.2.5)(vue@3.3.12)
   '@halo-dev/console-shared':
-    specifier: ^2.11.0
-    version: 2.11.0(vue-router@4.2.5)(vue@3.3.12)
+    specifier: ^2.12.0
+    version: 2.12.0(vue-router@4.2.5)(vue@3.3.12)
   canvas-confetti:
     specifier: ^1.9.2
     version: 1.9.2
@@ -20,8 +20,8 @@ dependencies:
 
 devDependencies:
   '@halo-dev/ui-plugin-bundler-kit':
-    specifier: ^1.0.0
-    version: 1.0.0(vite@4.5.1)
+    specifier: ^2.12.0
+    version: 2.12.0(vite@4.5.1)
   '@iconify/json':
     specifier: ^2.2.159
     version: 2.2.159
@@ -769,12 +769,12 @@ packages:
     resolution: {integrity: sha512-OfX7E2oUDYxtBvsuS4e/jSn4Q9Qb6DzgeYtsAdkPZ47znpoNsMgZw0+tVijiv3uGNR6dgNlty6r9rzIzHjtd/A==}
     dev: false
 
-  /@halo-dev/api-client@2.11.0:
-    resolution: {integrity: sha512-i3PFETsPdHYnTgk3jORu00t43/rCesmqpdZg38/Hq2AdgxhPkE7rghYGdoZRLdanvVC0HM1Axn18Zd7kdizxVA==}
+  /@halo-dev/api-client@2.12.0:
+    resolution: {integrity: sha512-W/FmwtdXvq/BSwi2VMYBPzV86SmUjjn/1RO3pzyBOp8KwZM97vVVPJwYhT7IUB+W7q9HtDBUlvcFS8M0bX0RaA==}
     dev: false
 
-  /@halo-dev/components@1.10.0(vue-router@4.2.5)(vue@3.3.12):
-    resolution: {integrity: sha512-Qg7JEkuVyTAqTjuLJHQifhMGl180yZTOX2cSueAssFCuyGZtVCcN/o5FmDtrcw8UXoV8vRwxvpixgjxFwlf/4Q==}
+  /@halo-dev/components@2.12.0(vue-router@4.2.5)(vue@3.3.12):
+    resolution: {integrity: sha512-5RXGsxM6Qm6sBUcfCCZ2r0ealk9kRnqdCGKv1/88b8HBrAM08S3sThoM3JcP0HqBSd4/tRCLMYAM9sO5tltUrg==}
     peerDependencies:
       vue: ^3.3.4
       vue-router: ^4.2.4
@@ -786,19 +786,19 @@ packages:
       - '@nuxt/kit'
     dev: false
 
-  /@halo-dev/console-shared@2.11.0(vue-router@4.2.5)(vue@3.3.12):
-    resolution: {integrity: sha512-XDyoHsueVgQOvMTDm4Fx3qKzCjXd7bI9eC0DFuw3w85Y3LQeHgrJfbXRlMRCTTZhe3kgpBOra4JjByyFFWa/Cw==}
+  /@halo-dev/console-shared@2.12.0(vue-router@4.2.5)(vue@3.3.12):
+    resolution: {integrity: sha512-coxKxjKD5jYednO18c3KDlp+0+QfxS+FVOm5oS/EPi3mw7So8wFZ82TF/zv0p5JAsKc9XKHQ7gusRckA3K0zww==}
     peerDependencies:
       vue: ^3.3.4
       vue-router: ^4.2.4
     dependencies:
-      '@halo-dev/api-client': 2.11.0
+      '@halo-dev/api-client': 2.12.0
       vue: 3.3.12(typescript@4.7.4)
       vue-router: 4.2.5(vue@3.3.12)
     dev: false
 
-  /@halo-dev/ui-plugin-bundler-kit@1.0.0(vite@4.5.1):
-    resolution: {integrity: sha512-K6D2jPJnLLl0gsiTzRoqXyr4pDl0+venTHW0hbk+cTuB9TNMEEFelBvYefrKQNjK9NpW4wVqviw4QLDXrrY3Vw==}
+  /@halo-dev/ui-plugin-bundler-kit@2.12.0(vite@4.5.1):
+    resolution: {integrity: sha512-3558qzH5RN9pB2j0ZonuIxX3cw8lh870cWpPPHjkDxTIjKt+aO5tjKhcqKlFL853jdx9nHIIS+nMDCeqjejpxw==}
     engines: {node: ^18.0.0 || >=20.0.0}
     peerDependencies:
       vite: ^4.0.0 || ^5.0.0
