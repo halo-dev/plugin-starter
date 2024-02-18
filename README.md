@@ -4,7 +4,7 @@ Halo 2.0 插件开发快速开始模板。
 
 ## 开发环境
 
-插件开发的详细文档请查阅：<https://docs.halo.run/developer-guide/plugin/hello-world>
+插件开发的详细文档请查阅：<https://docs.halo.run/developer-guide/plugin/introduction>
 
 所需环境：
 
@@ -47,7 +47,7 @@ cd path/to/plugin-starter
 ./gradlew.bat haloServer
 ```
 
-执行此命令后，会自动创建一个 Halo 的 Docker 容器并加载当前的插件，更多文档可查阅：<https://github.com/halo-sigs/halo-gradle-plugin>
+执行此命令后，会自动创建一个 Halo 的 Docker 容器并加载当前的插件，更多文档可查阅：<https://docs.halo.run/developer-guide/plugin/basics/devtools>
 
 ### 运行方式 2
 
