@@ -35,13 +35,20 @@ node {
     nodeProjectDir = file("${project.projectDir}/ui")
 }
 
-task buildFrontend(type: PnpmTask) {
+tasks.register('buildFrontend', PnpmTask) {
     args = ['build']
+    dependsOn('installDepsForUI')
+}
+
+tasks.register('installDepsForUI', PnpmTask) {
+    args = ['install']
 }
 
 build {
     // build frontend before build
-    tasks.getByName('compileJava').dependsOn('buildFrontend')
+    tasks.named('compileJava').configure {
+        dependsOn('buildFrontend')
+    }
 }
 
 halo {
