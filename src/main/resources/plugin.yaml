@@ -1,7 +1,9 @@
+# Refer https://docs.halo.run/developer-guide/plugin/basics/manifest
+
 apiVersion: plugin.halo.run/v1alpha1
 kind: Plugin
 metadata:
-  # The name defines how the plugin is invoked,A unique name
+  # The name defines how the plugin is invoked, A unique name
   name: starter
 spec:
   enabled: true
@@ -10,9 +12,8 @@ spec:
     name: Halo
     website: https://github.com/halo-dev
   logo: logo.png
-  # 'homepage' usually links to the GitHub repository of the plugin
-  homepage: https://github.com/halo-dev/plugin-starter
-  # 'displayName' explains what the plugin does in only a few words
+  homepage: https://github.com/halo-dev/plugin-starter#readme
+  repo: https://github.com/halo-dev/plugin-starter
   displayName: "插件快速开始模板"
   description: "这是一个插件快速开始模板"
   license:
