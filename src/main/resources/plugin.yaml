@@ -14,6 +14,7 @@ spec:
   logo: logo.png
   homepage: https://github.com/halo-dev/plugin-starter#readme
   repo: https://github.com/halo-dev/plugin-starter
+  issues: https://github.com/halo-dev/plugin-starter/issues
   displayName: "插件快速开始模板"
   description: "这是一个插件快速开始模板"
   license:
