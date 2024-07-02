@@ -36,7 +36,7 @@ onMounted(() => {
           </span>
         </a>
         <a
-          href="https://docs.halo.run/developer-guide/plugin/structure"
+          href="https://docs.halo.run/category/%E5%9F%BA%E7%A1%80"
           class="docs__box"
           target="_blank"
         >
@@ -60,7 +60,7 @@ onMounted(() => {
           </span>
         </a>
         <a
-          href="https://docs.halo.run/developer-guide/plugin/api-reference/extension"
+          href="https://docs.halo.run/category/api-%E5%8F%82%E8%80%83"
           class="docs__box"
           target="_blank"
         >
@@ -119,7 +119,10 @@ onMounted(() => {
         drop-shadow(0 1px 1px rgb(0 0 0 / 0.06));
 
       &:hover {
-        box-shadow: 0 0 0 0px #fff, 0 0 0 1px rgb(59 130 246 / 0.5), 0 0 #0000;
+        box-shadow:
+          0 0 0 0px #fff,
+          0 0 0 1px rgb(59 130 246 / 0.5),
+          0 0 #0000;
       }
 
       .docs__box-title {
