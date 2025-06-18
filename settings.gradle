@@ -4,4 +4,4 @@ pluginManagement {
     }
 }
 rootProject.name = 'plugin-starter'
-
+include 'ui'

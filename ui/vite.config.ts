@@ -6,7 +6,16 @@ import Icons from "unplugin-icons/vite";
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  plugins: [Vue(), Icons({ compiler: "vue3" }), HaloUIPluginBundlerKit()],
+  plugins: [
+    Vue(),
+    Icons({ compiler: "vue3" }),
+    HaloUIPluginBundlerKit({
+      outDir: {
+        dev: "../src/main/resources/console/",
+        prod: "build/dist/",
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
