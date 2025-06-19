@@ -1,6 +1,6 @@
 # plugin-starter
 
-Halo 2.0 插件开发快速开始模板。
+Halo 2.x 插件开发快速开始模板。
 
 ## 开发环境
 
@@ -8,7 +8,7 @@ Halo 2.0 插件开发快速开始模板。
 
 所需环境：
 
-1. Java 17
+1. JDK 21
 2. Node 20
 3. pnpm 9
 4. Docker (可选)
