@@ -1,23 +1,24 @@
 {
+  "type": "module",
   "scripts": {
-    "dev": "vite build --watch --mode=development",
     "build": "run-p type-check \"build-only {@}\" --",
     "build-only": "vite build",
-    "test:unit": "vitest --passWithNoTests",
-    "type-check": "vue-tsc --build --force",
+    "dev": "vite build --watch --mode=development",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "prettier": "prettier --write src/"
+    "prettier": "prettier --write src/",
+    "test:unit": "vitest --passWithNoTests",
+    "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
     "@halo-dev/api-client": "^2.21.0",
     "@halo-dev/components": "^2.21.0",
-    "@halo-dev/console-shared": "^2.17.0",
+    "@halo-dev/console-shared": "^2.21.0",
     "axios": "^1.7.2",
     "canvas-confetti": "^1.9.3",
     "vue": "^3.4.31"
   },
   "devDependencies": {
-    "@halo-dev/ui-plugin-bundler-kit": "^2.21.0",
+    "@halo-dev/ui-plugin-bundler-kit": "^2.21.1",
     "@iconify/json": "^2.2.224",
     "@rushstack/eslint-patch": "^1.10.3",
     "@tsconfig/node20": "^20.1.4",
