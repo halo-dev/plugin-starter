@@ -35,8 +35,9 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 tasks.register('processUiResources', Copy) {
-    from project(':ui').tasks.named('buildFrontend')
+    from project(':ui').layout.buildDirectory.dir('dist')
     into layout.buildDirectory.dir('resources/main/console')
+    dependsOn project(':ui').tasks.named('assemble')
     shouldRunAfter tasks.named('processResources')
 }
 
