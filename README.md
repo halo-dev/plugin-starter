@@ -2,6 +2,9 @@
 
 Halo 2.x 插件开发快速开始模板。
 
+> [!WARNING]
+> 此项目将在未来被标记为过时，后续建议使用 [halo-dev/create-halo-plugin](https://github.com/halo-dev/create-halo-plugin) 以交互式的方式创建 Halo 插件项目。
+
 ## 开发环境
 
 插件开发的详细文档请查阅：<https://docs.halo.run/developer-guide/plugin/introduction>
