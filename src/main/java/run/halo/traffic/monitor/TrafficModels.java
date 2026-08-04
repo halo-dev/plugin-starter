@@ -1,6 +1,7 @@
 package run.halo.traffic.monitor;
 
 import java.util.List;
+import java.util.Map;
 
 public final class TrafficModels {
     private TrafficModels() {}
@@ -62,11 +63,82 @@ public final class TrafficModels {
         boolean acknowledged
     ) {}
 
+    public record BlockView(
+        String ip,
+        long blockedAt,
+        long expiresAt,
+        String reason,
+        String source,
+        long hitCount,
+        long lastHit
+    ) {}
+
+    public record ResponseSnapshot(
+        String contentType,
+        Map<String, List<String>> headers,
+        String body,
+        boolean bodyCaptured,
+        boolean bodyTruncated
+    ) {
+        public static ResponseSnapshot empty() {
+            return new ResponseSnapshot("", Map.of(), "", false, false);
+        }
+    }
+
+    public record AccessLogView(
+        String id,
+        long timestamp,
+        String ip,
+        String method,
+        String path,
+        int status,
+        long requestBytes,
+        long responseBytes,
+        long durationMs,
+        String contentType,
+        String responsePreview,
+        boolean bodyCaptured,
+        boolean bodyTruncated
+    ) {}
+
+    public record AccessDetail(
+        String id,
+        long timestamp,
+        String ip,
+        String method,
+        String path,
+        int status,
+        long requestBytes,
+        long responseBytes,
+        long durationMs,
+        String userAgent,
+        String contentType,
+        Map<String, List<String>> responseHeaders,
+        String responseBody,
+        boolean bodyCaptured,
+        boolean bodyTruncated
+    ) {
+        AccessLogView toView() {
+            String normalized = responseBody == null ? "" : responseBody.replaceAll("\\s+", " ").trim();
+            String preview = normalized.length() <= 180 ? normalized : normalized.substring(0, 180) + "…";
+            return new AccessLogView(id, timestamp, ip, method, path, status, requestBytes,
+                responseBytes, durationMs, contentType, preview, bodyCaptured, bodyTruncated);
+        }
+    }
+
+    public record AccessLogPage(
+        List<AccessLogView> items,
+        long total,
+        int offset,
+        int limit
+    ) {}
+
     public record Dashboard(
         Summary summary,
         List<TimelinePoint> timeline,
         List<IpView> topIps,
         List<AlertView> alerts,
+        List<BlockView> blockedIps,
         long generatedAt
     ) {}
 }

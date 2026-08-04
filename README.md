@@ -15,6 +15,9 @@
   - 单 IP 每分钟 5xx 爆发；
   - `.env`、`wp-admin`、`phpmyadmin`、`actuator`等常见扫描路径。
 - 告警同时写入 Halo 日志与 Console 告警列表，支持确认处理。
+- IP 白名单支持单个 IPv4/IPv6 地址以及 CIDR 网段。
+- 识别 `POST /login` 登录失败；同一 IP 在指定窗口内达到阈值后立即返回 `403` 并进入封禁列表。
+- Console 支持对访问 IP 手动封禁 24 小时、查看封禁原因/拦截次数以及立即解封。
 - 访问时序、IP 统计和告警固定保留 7 天，超期数据每分钟自动清理。
 - 默认排除 Console、插件自身 API 和静态资源，避免统计回路。
 
@@ -27,7 +30,7 @@
 3. 上传：
 
    ```text
-   build/libs/halo-plugin-traffic-monitor-1.0.0.jar
+   build/libs/halo-plugin-traffic-monitor-1.1.0.jar
    ```
 
 4. 启用插件，然后从左侧 **安全 -> IP 流量监控** 进入仪表盘。
@@ -52,9 +55,14 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 | 单次流量阈值 | 10,485,760 | 单个 HTTP exchange |
 | 每分钟 5xx 阈值 | 10 | 单 IP 60 秒滑动窗口 |
 | 告警冷却 | 60 秒 | IP + 告警类型维度 |
+| IP 白名单 | `127.0.0.1`、`::1` | 支持单 IP 和 CIDR；白名单始终放行 |
+| 登录失败阈值 | 5 次/10 分钟 | 达到阈值后自动封禁来源 IP |
+| 自动封禁时长 | 1,440 分钟 | 默认 24 小时，到期自动解封 |
 | 日志保留 | 7 天 | 固定策略，超期自动清理 |
 
-当前 `1.0.0` 采用进程内滚动窗口：插件重载或 Halo 重启后从空统计开始。
+当前 `1.1.0` 的统计与封禁状态采用进程内滚动窗口：插件重载或 Halo 重启后从空状态开始。配置中的白名单和阈值由 Halo 保存。
+
+> 上线前先把管理端出口 IP 或管理网段加入白名单。若前面有 Nginx/CDN，请正确配置并开启“信任反向代理 IP 请求头”，否则所有访问可能被识别为代理 IP。
 
 ## 构建与测试
 
@@ -100,6 +108,9 @@ API 前缀：
 - `GET /timeline?minutes=60&bucketMinutes=1`
 - `GET /ips?limit=100`
 - `GET /alerts?limit=100`
+- `GET /blocks`
 - `GET /stream?minutes=60`
 - `POST /alerts/{id}/acknowledge`
+- `POST /blocks/{ip}?minutes=1440&reason=manual`
+- `DELETE /blocks/{ip}`
 - `DELETE /data`

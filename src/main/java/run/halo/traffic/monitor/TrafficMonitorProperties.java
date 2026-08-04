@@ -10,6 +10,15 @@ public class TrafficMonitorProperties {
     private long singleRequestBytesThreshold = 10_485_760L;
     private int serverErrorsPerMinuteThreshold = 10;
     private int alertCooldownSeconds = 60;
+    private String ipWhitelist = "127.0.0.1\n::1";
+    private boolean autoBlockFailedLogins = true;
+    private int failedLoginThreshold = 5;
+    private int failedLoginWindowMinutes = 10;
+    private int blockDurationMinutes = 1_440;
+    private boolean captureResponseHeaders = true;
+    private boolean captureResponseBody = true;
+    private int responseBodyMaxBytes = 32_768;
+    private int maxStoredRecords = 2_000;
 
     public boolean isEnabled() {
         return enabled;
@@ -81,6 +90,78 @@ public class TrafficMonitorProperties {
 
     public void setAlertCooldownSeconds(int value) {
         this.alertCooldownSeconds = Math.max(1, value);
+    }
+
+    public String getIpWhitelist() {
+        return ipWhitelist;
+    }
+
+    public void setIpWhitelist(String value) {
+        this.ipWhitelist = value == null ? "" : value;
+    }
+
+    public boolean isAutoBlockFailedLogins() {
+        return autoBlockFailedLogins;
+    }
+
+    public void setAutoBlockFailedLogins(boolean value) {
+        this.autoBlockFailedLogins = value;
+    }
+
+    public int getFailedLoginThreshold() {
+        return failedLoginThreshold;
+    }
+
+    public void setFailedLoginThreshold(int value) {
+        this.failedLoginThreshold = Math.max(1, value);
+    }
+
+    public int getFailedLoginWindowMinutes() {
+        return failedLoginWindowMinutes;
+    }
+
+    public void setFailedLoginWindowMinutes(int value) {
+        this.failedLoginWindowMinutes = Math.max(1, value);
+    }
+
+    public int getBlockDurationMinutes() {
+        return blockDurationMinutes;
+    }
+
+    public void setBlockDurationMinutes(int value) {
+        this.blockDurationMinutes = Math.max(1, value);
+    }
+
+    public boolean isCaptureResponseHeaders() {
+        return captureResponseHeaders;
+    }
+
+    public void setCaptureResponseHeaders(boolean value) {
+        this.captureResponseHeaders = value;
+    }
+
+    public boolean isCaptureResponseBody() {
+        return captureResponseBody;
+    }
+
+    public void setCaptureResponseBody(boolean value) {
+        this.captureResponseBody = value;
+    }
+
+    public int getResponseBodyMaxBytes() {
+        return responseBodyMaxBytes;
+    }
+
+    public void setResponseBodyMaxBytes(int value) {
+        this.responseBodyMaxBytes = Math.max(1_024, Math.min(1_048_576, value));
+    }
+
+    public int getMaxStoredRecords() {
+        return maxStoredRecords;
+    }
+
+    public void setMaxStoredRecords(int value) {
+        this.maxStoredRecords = Math.max(100, Math.min(20_000, value));
     }
 
 }

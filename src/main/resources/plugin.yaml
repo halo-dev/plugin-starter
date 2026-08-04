@@ -10,10 +10,10 @@ spec:
   settingName: traffic-monitor-setting
   configMapName: traffic-monitor-configmap
   author:
-    name: Halo Traffic Monitor
+    name: 0rion
   logo: logo.png
   displayName: "IP 流量监控"
-  description: "实时统计 IP 访问、请求/响应流量，并对异常速率、带宽、错误和扫描路径告警。"
+  description: "实时统计 IP 访问和流量，支持异常告警、白名单及登录失败自动封禁 IP。"
   license:
     - name: "GPL-3.0"
       url: "https://github.com/halo-dev/plugin-starter/blob/main/LICENSE"

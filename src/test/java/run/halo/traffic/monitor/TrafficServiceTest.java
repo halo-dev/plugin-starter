@@ -80,9 +80,59 @@ class TrafficServiceTest {
         assertTrue(service.alerts(10).isEmpty());
     }
 
+    @Test
+    void autoBlocksIpAfterFailedLoginThreshold() {
+        rules.setFailedLoginThreshold(3);
+        rules.setFailedLoginWindowMinutes(10);
+        rules.setBlockDurationMinutes(60);
+
+        loginResult("203.0.113.66", true);
+        loginResult("203.0.113.66", true);
+        assertTrue(service.blockedIps().isEmpty());
+        loginResult("203.0.113.66", true);
+
+        assertEquals(1, service.blockedIps().size());
+        assertEquals("203.0.113.66", service.blockedIps().getFirst().ip());
+        assertEquals("auto-login", service.blockedIps().getFirst().source());
+        assertTrue(service.alerts(20).stream().anyMatch(a -> a.type().equals("IP_AUTO_BLOCKED")));
+    }
+
+    @Test
+    void whitelistBypassesAutomaticBlock() {
+        rules.setIpWhitelist("203.0.113.0/24");
+        rules.setFailedLoginThreshold(2);
+
+        loginResult("203.0.113.77", true);
+        loginResult("203.0.113.77", true);
+        loginResult("203.0.113.77", true);
+
+        assertTrue(service.blockedIps().isEmpty());
+        assertTrue(service.isWhitelisted("203.0.113.77", rules));
+    }
+
+    @Test
+    void manualBlockExpiresAndCanBeRemoved() {
+        assertTrue(service.blockIp("198.51.100.9", "test", "manual", 1).isPresent());
+        assertTrue(service.blockedAccess("198.51.100.9", clock.millis()).isPresent());
+        assertEquals(1, service.blockedIps().getFirst().hitCount());
+        assertTrue(service.unblockIp("198.51.100.9"));
+        assertTrue(service.blockedIps().isEmpty());
+
+        service.blockIp("198.51.100.9", "test", "manual", 1);
+        clock.advance(60_001L);
+        assertTrue(service.blockedIps().isEmpty());
+    }
+
     private void record(String ip, String path, int status, long requestBytes, long responseBytes) {
         service.record(new TrafficRecord(clock.millis(), ip, "GET", path, status,
             requestBytes, responseBytes, 5, "JUnit"), rules);
+    }
+
+    private void loginResult(String ip, boolean failed) {
+        var record = new TrafficRecord(clock.millis(), ip, "POST", "/login",
+            failed ? 401 : 200, 128, 256, 5, "JUnit");
+        service.record(record, rules);
+        service.recordLoginResult(record, failed, rules);
     }
 
     private static final class MutableClock extends Clock {

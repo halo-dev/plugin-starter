@@ -6,4 +6,4 @@ spec:
   className: run.halo.traffic.monitor.TrafficMonitorWebFilter
   extensionPointName: additional-webfilter
   displayName: "IP 流量监控过滤器"
-  description: "记录前台请求的 IP、时间、请求/响应字节和状态码。"
+  description: "记录请求流量，并执行 IP 白名单、登录失败识别和实时封禁。"

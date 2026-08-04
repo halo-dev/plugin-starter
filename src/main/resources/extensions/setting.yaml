@@ -24,6 +24,33 @@ spec:
           name: ignoreStaticResources
           label: "忽略图片/JS/CSS 等静态资源"
           value: true
+        - $formkit: textarea
+          name: ipWhitelist
+          label: "IP 白名单"
+          help: "白名单 IP 跳过自动和手动封禁；支持单 IP、IPv4/IPv6 CIDR，使用换行、逗号或空格分隔。请先填入管理端出口 IP。"
+          value: |-
+            127.0.0.1
+            ::1
+        - $formkit: checkbox
+          name: autoBlockFailedLogins
+          label: "登录失败达到阈值时自动封禁 IP"
+          value: true
+        - $formkit: number
+          name: failedLoginThreshold
+          label: "登录失败封禁阈值"
+          help: "同一 IP 在统计窗口内达到该次数后立即封禁。"
+          min: 1
+          value: 5
+        - $formkit: number
+          name: failedLoginWindowMinutes
+          label: "登录失败统计窗口（分钟）"
+          min: 1
+          value: 10
+        - $formkit: number
+          name: blockDurationMinutes
+          label: "自动封禁时长（分钟）"
+          min: 1
+          value: 1440
         - $formkit: number
           name: requestsPerMinuteThreshold
           label: "单 IP 每分钟请求数阈值"

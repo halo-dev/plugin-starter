@@ -29,8 +29,13 @@ public class TrafficMonitorEndpoint implements CustomEndpoint {
             .GET("/timeline", this::timeline)
             .GET("/ips", this::ips)
             .GET("/alerts", this::alerts)
+            .GET("/blocks", this::blocks)
+            .GET("/records", this::records)
+            .GET("/records/{id}", this::recordDetail)
             .GET("/stream", this::stream)
             .POST("/alerts/{id}/acknowledge", this::acknowledge)
+            .POST("/blocks/{ip}", this::block)
+            .DELETE("/blocks/{ip}", this::unblock)
             .DELETE("/data", this::reset)
             .build();
     }
@@ -57,6 +62,29 @@ public class TrafficMonitorEndpoint implements CustomEndpoint {
         return ServerResponse.ok().bodyValue(trafficService.alerts(queryInt(request, "limit", 100)));
     }
 
+    private Mono<ServerResponse> blocks(ServerRequest request) {
+        return ServerResponse.ok().bodyValue(trafficService.blockedIps());
+    }
+
+    private Mono<ServerResponse> records(ServerRequest request) {
+        int minutes = Math.max(1, Math.min(10_080, queryInt(request, "minutes", 1_440)));
+        long since = System.currentTimeMillis() - minutes * 60_000L;
+        return ServerResponse.ok().bodyValue(trafficService.accessLogs(
+            request.queryParam("ip").orElse(""),
+            request.queryParam("path").orElse(""),
+            queryInteger(request, "status"),
+            since,
+            queryInt(request, "offset", 0),
+            queryInt(request, "limit", 100)
+        ));
+    }
+
+    private Mono<ServerResponse> recordDetail(ServerRequest request) {
+        return trafficService.accessDetail(request.pathVariable("id"))
+            .map(value -> ServerResponse.ok().bodyValue(value))
+            .orElseGet(() -> ServerResponse.notFound().build());
+    }
+
     private Mono<ServerResponse> stream(ServerRequest request) {
         int minutes = queryInt(request, "minutes", 60);
         Flux<ServerSentEvent<TrafficModels.Dashboard>> events = Flux
@@ -78,6 +106,21 @@ public class TrafficMonitorEndpoint implements CustomEndpoint {
         return ServerResponse.noContent().build();
     }
 
+    private Mono<ServerResponse> block(ServerRequest request) {
+        int minutes = Math.max(1, Math.min(525_600, queryInt(request, "minutes", 1_440)));
+        String reason = request.queryParam("reason").orElse("Console 手动封禁");
+        return trafficService.blockIp(request.pathVariable("ip"), reason, "manual", minutes)
+            .map(value -> ServerResponse.ok().bodyValue(value))
+            .orElseGet(() -> ServerResponse.badRequest().build());
+    }
+
+    private Mono<ServerResponse> unblock(ServerRequest request) {
+        if (!trafficService.unblockIp(request.pathVariable("ip"))) {
+            return ServerResponse.notFound().build();
+        }
+        return ServerResponse.noContent().build();
+    }
+
     private Mono<ServerResponse> reset(ServerRequest request) {
         trafficService.reset();
         return ServerResponse.noContent().build();
@@ -91,6 +134,16 @@ public class TrafficMonitorEndpoint implements CustomEndpoint {
                 return defaultValue;
             }
         }).orElse(defaultValue);
+    }
+
+    private static Integer queryInteger(ServerRequest request, String name) {
+        return request.queryParam(name).map(value -> {
+            try {
+                return Integer.valueOf(value);
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
+        }).orElse(null);
     }
 
     @Override

@@ -25,5 +25,15 @@ class TrafficMonitorEndpointTest {
         client.delete().uri("/data").exchange().expectStatus().isNoContent();
         client.get().uri("/summary?minutes=60").exchange()
             .expectBody().jsonPath("$.requests").isEqualTo(0);
+
+        client.post().uri("/blocks/203.0.113.8?minutes=60&reason=test").exchange()
+            .expectStatus().isOk()
+            .expectBody()
+            .jsonPath("$.ip").isEqualTo("203.0.113.8")
+            .jsonPath("$.source").isEqualTo("manual");
+        client.get().uri("/blocks").exchange()
+            .expectStatus().isOk()
+            .expectBody().jsonPath("$[0].ip").isEqualTo("203.0.113.8");
+        client.delete().uri("/blocks/203.0.113.8").exchange().expectStatus().isNoContent();
     }
 }

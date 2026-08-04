@@ -1,19 +1,26 @@
 package run.halo.traffic.monitor;
 
 import static run.halo.traffic.monitor.TrafficModels.AlertView;
+import static run.halo.traffic.monitor.TrafficModels.AccessDetail;
+import static run.halo.traffic.monitor.TrafficModels.AccessLogPage;
+import static run.halo.traffic.monitor.TrafficModels.BlockView;
 import static run.halo.traffic.monitor.TrafficModels.Dashboard;
 import static run.halo.traffic.monitor.TrafficModels.IpView;
 import static run.halo.traffic.monitor.TrafficModels.Summary;
 import static run.halo.traffic.monitor.TrafficModels.TimelinePoint;
 import static run.halo.traffic.monitor.TrafficModels.TrafficRecord;
+import static run.halo.traffic.monitor.TrafficModels.ResponseSnapshot;
 
 import java.time.Clock;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,6 +40,8 @@ public class TrafficService {
     private static final Pattern SUSPICIOUS_PATH = Pattern.compile(
         "(?i)(?:^|/)(?:\\.env|\\.git|wp-admin|wp-login\\.php|phpmyadmin|actuator|server-status|"
             + "vendor/phpunit|boaform|cgi-bin)(?:/|$)");
+    private static final Set<String> SENSITIVE_RESPONSE_HEADERS = Set.of(
+        "set-cookie", "proxy-authenticate", "www-authenticate", "authorization");
 
     private final Clock clock;
     private final Map<Long, Bucket> buckets = new ConcurrentHashMap<>();
@@ -40,6 +49,10 @@ public class TrafficService {
     private final Map<String, AlertView> alerts = new ConcurrentHashMap<>();
     private final ConcurrentLinkedDeque<String> alertOrder = new ConcurrentLinkedDeque<>();
     private final Map<String, Long> alertCooldowns = new ConcurrentHashMap<>();
+    private final Map<String, BlockEntry> blockedIps = new ConcurrentHashMap<>();
+    private final Map<String, LoginFailureWindow> loginFailures = new ConcurrentHashMap<>();
+    private final Map<String, AccessDetail> accessDetails = new ConcurrentHashMap<>();
+    private final ConcurrentLinkedDeque<String> accessOrder = new ConcurrentLinkedDeque<>();
     private final AtomicLong lastCleanup = new AtomicLong();
 
     public TrafficService() {
@@ -51,6 +64,14 @@ public class TrafficService {
     }
 
     public void record(TrafficRecord record, TrafficMonitorProperties rules) {
+        record(record, rules, ResponseSnapshot.empty());
+    }
+
+    public void record(
+        TrafficRecord record,
+        TrafficMonitorProperties rules,
+        ResponseSnapshot response
+    ) {
         long minute = floorMinute(record.timestamp());
         Bucket bucket = buckets.computeIfAbsent(minute, ignored -> new Bucket());
         bucket.add(record);
@@ -78,6 +99,8 @@ public class TrafficService {
             maybeAlert(record, "SUSPICIOUS_PATH", "medium", "访问了常见扫描路径", rules);
         }
 
+        storeAccessDetail(record, response, rules.getMaxStoredRecords());
+
         cleanupIfNeeded(record.timestamp());
     }
 
@@ -85,7 +108,8 @@ public class TrafficService {
         cleanupIfNeeded(clock.millis());
         int range = clamp(minutes, 5, 1_440);
         return new Dashboard(
-            summary(range), timeline(range, chooseBucketMinutes(range)), topIps(50), alerts(50), clock.millis());
+            summary(range), timeline(range, chooseBucketMinutes(range)), topIps(50), alerts(50),
+            blockedIps(), clock.millis());
     }
 
     public Summary summary(int minutes) {
@@ -162,10 +186,130 @@ public class TrafficService {
         return result;
     }
 
+    public AccessLogPage accessLogs(
+        String ip,
+        String path,
+        Integer status,
+        long since,
+        int offset,
+        int limit
+    ) {
+        cleanupIfNeeded(clock.millis());
+        String ipFilter = normalizeFilter(ip);
+        String pathFilter = normalizeFilter(path);
+        int pageOffset = Math.max(0, offset);
+        int pageLimit = clamp(limit, 1, 200);
+        long matched = 0;
+        List<TrafficModels.AccessLogView> items = new ArrayList<>();
+        for (String id : accessOrder) {
+            AccessDetail detail = accessDetails.get(id);
+            if (detail == null
+                || detail.timestamp() < since
+                || !containsIgnoreCase(detail.ip(), ipFilter)
+                || !containsIgnoreCase(detail.path(), pathFilter)
+                || (status != null && detail.status() != status)) {
+                continue;
+            }
+            if (matched >= pageOffset && items.size() < pageLimit) {
+                items.add(detail.toView());
+            }
+            matched++;
+        }
+        return new AccessLogPage(items, matched, pageOffset, pageLimit);
+    }
+
+    public Optional<AccessDetail> accessDetail(String id) {
+        cleanupIfNeeded(clock.millis());
+        return Optional.ofNullable(accessDetails.get(id));
+    }
+
     public boolean acknowledge(String id) {
         return alerts.computeIfPresent(id, (key, old) -> new AlertView(
             old.id(), old.timestamp(), old.ip(), old.type(), old.severity(), old.message(), old.path(), true
         )) != null;
+    }
+
+    public boolean isWhitelisted(String ip, TrafficMonitorProperties rules) {
+        return IpRuleMatcher.matches(ip, rules.getIpWhitelist());
+    }
+
+    public Optional<BlockView> blockedAccess(String ip, long now) {
+        BlockEntry entry = blockedIps.get(ip);
+        if (entry == null) {
+            return Optional.empty();
+        }
+        if (entry.isExpired(now)) {
+            blockedIps.remove(ip, entry);
+            return Optional.empty();
+        }
+        entry.hit(now);
+        return Optional.of(entry.toView(ip));
+    }
+
+    public List<BlockView> blockedIps() {
+        long now = clock.millis();
+        blockedIps.entrySet().removeIf(entry -> entry.getValue().isExpired(now));
+        return blockedIps.entrySet().stream()
+            .map(entry -> entry.getValue().toView(entry.getKey()))
+            .sorted(Comparator.comparingLong(BlockView::blockedAt).reversed())
+            .toList();
+    }
+
+    public Optional<BlockView> blockIp(String ip, String reason, String source, int durationMinutes) {
+        String normalized = ClientIpResolver.normalize(ip);
+        if (normalized == null || "unknown".equals(normalized)) {
+            return Optional.empty();
+        }
+        long now = clock.millis();
+        long expiresAt = now + Math.max(1, durationMinutes) * MINUTE_MS;
+        BlockEntry entry = blockedIps.compute(normalized, (ignored, current) -> {
+            if (current == null || current.isExpired(now)) {
+                return new BlockEntry(now, expiresAt, safeText(reason, "手动封禁"),
+                    safeText(source, "manual"));
+            }
+            current.extend(expiresAt, safeText(reason, current.reason),
+                safeText(source, current.source));
+            return current;
+        });
+        log.warn("IP blocked ip={} source={} expiresAt={} reason={}",
+            normalized, entry.source, entry.expiresAt.get(), entry.reason);
+        return Optional.of(entry.toView(normalized));
+    }
+
+    public boolean unblockIp(String ip) {
+        String normalized = ClientIpResolver.normalize(ip);
+        if (normalized == null) {
+            return false;
+        }
+        loginFailures.remove(normalized);
+        return blockedIps.remove(normalized) != null;
+    }
+
+    public void recordLoginResult(
+        TrafficRecord record,
+        boolean failed,
+        TrafficMonitorProperties rules
+    ) {
+        if (!failed) {
+            loginFailures.remove(record.ip());
+            return;
+        }
+        long windowMs = rules.getFailedLoginWindowMinutes() * MINUTE_MS;
+        LoginFailureWindow window = loginFailures.computeIfAbsent(
+            record.ip(), ignored -> new LoginFailureWindow());
+        int attempts = window.add(record.timestamp(), windowMs);
+        maybeAlert(record, "LOGIN_FAILURE", "medium",
+            rules.getFailedLoginWindowMinutes() + " 分钟内登录失败 " + attempts + " 次", rules);
+
+        if (rules.isAutoBlockFailedLogins()
+            && attempts >= rules.getFailedLoginThreshold()
+            && !isWhitelisted(record.ip(), rules)) {
+            blockIp(record.ip(), "登录失败达到阈值 " + attempts + " 次", "auto-login",
+                rules.getBlockDurationMinutes());
+            maybeAlert(record, "IP_AUTO_BLOCKED", "high",
+                "登录失败达到阈值，IP 已自动封禁 " + rules.getBlockDurationMinutes() + " 分钟", rules);
+            loginFailures.remove(record.ip());
+        }
     }
 
     public void reset() {
@@ -174,6 +318,43 @@ public class TrafficService {
         alerts.clear();
         alertOrder.clear();
         alertCooldowns.clear();
+        loginFailures.clear();
+        accessDetails.clear();
+        accessOrder.clear();
+    }
+
+    private void storeAccessDetail(
+        TrafficRecord record,
+        ResponseSnapshot response,
+        int maxStoredRecords
+    ) {
+        ResponseSnapshot normalized = response == null ? ResponseSnapshot.empty() : response;
+        String id = UUID.randomUUID().toString();
+        AccessDetail detail = new AccessDetail(
+            id,
+            record.timestamp(),
+            record.ip(),
+            record.method(),
+            record.path(),
+            record.status(),
+            record.requestBytes(),
+            record.responseBytes(),
+            record.durationMs(),
+            record.userAgent(),
+            safeText(normalized.contentType(), ""),
+            sanitizeHeaders(normalized.headers()),
+            normalized.body() == null ? "" : normalized.body(),
+            normalized.bodyCaptured(),
+            normalized.bodyTruncated()
+        );
+        accessDetails.put(id, detail);
+        accessOrder.addFirst(id);
+        while (accessOrder.size() > maxStoredRecords) {
+            String removed = accessOrder.pollLast();
+            if (removed != null) {
+                accessDetails.remove(removed);
+            }
+        }
     }
 
     private void maybeAlert(
@@ -215,6 +396,16 @@ public class TrafficService {
         buckets.keySet().removeIf(timestamp -> timestamp < floorMinute(cutoff));
         ipStats.entrySet().removeIf(entry -> entry.getValue().lastSeen.get() < cutoff);
         alertCooldowns.entrySet().removeIf(entry -> entry.getValue() < cutoff);
+        blockedIps.entrySet().removeIf(entry -> entry.getValue().isExpired(now));
+        loginFailures.entrySet().removeIf(entry -> entry.getValue().lastSeen() < cutoff);
+        accessOrder.removeIf(id -> {
+            AccessDetail detail = accessDetails.get(id);
+            if (detail == null || detail.timestamp() < cutoff) {
+                accessDetails.remove(id);
+                return true;
+            }
+            return false;
+        });
         alertOrder.removeIf(id -> {
             AlertView alert = alerts.get(id);
             if (alert == null || alert.timestamp() < cutoff) {
@@ -241,6 +432,54 @@ public class TrafficService {
 
     private static int clamp(int value, int min, int max) {
         return Math.max(min, Math.min(max, value));
+    }
+
+    private static String safeText(String value, String fallback) {
+        if (value == null || value.isBlank()) {
+            return fallback;
+        }
+        String trimmed = value.trim();
+        return trimmed.length() <= 256 ? trimmed : trimmed.substring(0, 256);
+    }
+
+    private static Map<String, List<String>> sanitizeHeaders(Map<String, List<String>> headers) {
+        if (headers == null || headers.isEmpty()) {
+            return Map.of();
+        }
+        Map<String, List<String>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> entry : headers.entrySet()) {
+            if (result.size() >= 100) {
+                break;
+            }
+            String name = safeText(entry.getKey(), "");
+            if (name.isEmpty()) {
+                continue;
+            }
+            if (SENSITIVE_RESPONSE_HEADERS.contains(name.toLowerCase(Locale.ROOT))) {
+                result.put(name, List.of("[REDACTED]"));
+                continue;
+            }
+            List<String> values = entry.getValue() == null ? List.of() : entry.getValue().stream()
+                .limit(20)
+                .map(value -> {
+                    if (value == null) {
+                        return "";
+                    }
+                    return value.length() <= 4_096 ? value : value.substring(0, 4_096) + "…";
+                })
+                .toList();
+            result.put(name, values);
+        }
+        return Map.copyOf(result);
+    }
+
+    private static String normalizeFilter(String value) {
+        return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static boolean containsIgnoreCase(String value, String filter) {
+        return filter.isEmpty()
+            || (value != null && value.toLowerCase(Locale.ROOT).contains(filter));
     }
 
     private static final class Bucket {
@@ -330,6 +569,59 @@ public class TrafficService {
         IpView toView(String ip) {
             return new IpView(ip, requests.sum(), totalBytes.sum(), errors.sum(), firstSeen.get(),
                 lastSeen.get(), lastPath, lastStatus);
+        }
+    }
+
+    private static final class BlockEntry {
+        private final long blockedAt;
+        private final AtomicLong expiresAt;
+        private final LongAdder hitCount = new LongAdder();
+        private final AtomicLong lastHit = new AtomicLong();
+        private volatile String reason;
+        private volatile String source;
+
+        private BlockEntry(long blockedAt, long expiresAt, String reason, String source) {
+            this.blockedAt = blockedAt;
+            this.expiresAt = new AtomicLong(expiresAt);
+            this.reason = reason;
+            this.source = source;
+        }
+
+        private boolean isExpired(long now) {
+            return now >= expiresAt.get();
+        }
+
+        private void extend(long newExpiresAt, String newReason, String newSource) {
+            expiresAt.accumulateAndGet(newExpiresAt, Math::max);
+            reason = newReason;
+            source = newSource;
+        }
+
+        private void hit(long now) {
+            hitCount.increment();
+            lastHit.set(now);
+        }
+
+        private BlockView toView(String ip) {
+            return new BlockView(ip, blockedAt, expiresAt.get(), reason, source,
+                hitCount.sum(), lastHit.get());
+        }
+    }
+
+    private static final class LoginFailureWindow {
+        private final ArrayDeque<Long> timestamps = new ArrayDeque<>();
+
+        private synchronized int add(long timestamp, long windowMs) {
+            long cutoff = timestamp - windowMs;
+            while (!timestamps.isEmpty() && timestamps.peekFirst() < cutoff) {
+                timestamps.removeFirst();
+            }
+            timestamps.addLast(timestamp);
+            return timestamps.size();
+        }
+
+        private synchronized long lastSeen() {
+            return timestamps.isEmpty() ? 0 : timestamps.peekLast();
         }
     }
 }
