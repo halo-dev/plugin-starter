@@ -1,0 +1,9 @@
+apiVersion: plugin.halo.run/v1alpha1
+kind: ExtensionDefinition
+metadata:
+  name: traffic-monitor-webfilter
+spec:
+  className: run.halo.traffic.monitor.TrafficMonitorWebFilter
+  extensionPointName: additional-webfilter
+  displayName: "IP 流量监控过滤器"
+  description: "记录前台请求的 IP、时间、请求/响应字节和状态码。"

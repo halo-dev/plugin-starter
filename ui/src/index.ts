@@ -1,7 +1,7 @@
 import { definePlugin } from '@halo-dev/console-shared'
 import HomeView from './views/HomeView.vue'
-import { IconPlug } from '@halo-dev/components'
 import { markRaw } from 'vue'
+import RiRadarLine from '~icons/ri/radar-line'
 
 export default definePlugin({
   components: {},
@@ -9,16 +9,16 @@ export default definePlugin({
     {
       parentName: 'Root',
       route: {
-        path: '/example',
-        name: 'Example',
+        path: '/traffic-monitor',
+        name: 'TrafficMonitor',
         component: HomeView,
         meta: {
-          title: '示例页面',
+          title: 'IP 流量监控',
           searchable: true,
           menu: {
-            name: '示例页面',
-            group: '示例分组',
-            icon: markRaw(IconPlug),
+            name: 'IP 流量监控',
+            group: '安全',
+            icon: markRaw(RiRadarLine),
             priority: 0,
           },
         },

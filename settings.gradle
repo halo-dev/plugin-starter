@@ -3,5 +3,5 @@ pluginManagement {
         gradlePluginPortal()
     }
 }
-rootProject.name = 'plugin-starter'
+rootProject.name = 'halo-plugin-traffic-monitor'
 include 'ui'

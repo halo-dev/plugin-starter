@@ -1,0 +1,51 @@
+apiVersion: v1alpha1
+kind: Setting
+metadata:
+  name: traffic-monitor-setting
+spec:
+  forms:
+    - group: rules
+      label: "监控与告警"
+      formSchema:
+        - $formkit: checkbox
+          name: enabled
+          label: "启用访问监控"
+          value: true
+        - $formkit: checkbox
+          name: trustProxyHeaders
+          label: "信任反向代理 IP 请求头"
+          help: "仅当 Nginx/Cloudflare 会覆盖 X-Forwarded-For 时开启，避免客户端伪造 IP。"
+          value: false
+        - $formkit: checkbox
+          name: includeApiTraffic
+          label: "统计 API 请求"
+          value: false
+        - $formkit: checkbox
+          name: ignoreStaticResources
+          label: "忽略图片/JS/CSS 等静态资源"
+          value: true
+        - $formkit: number
+          name: requestsPerMinuteThreshold
+          label: "单 IP 每分钟请求数阈值"
+          min: 1
+          value: 120
+        - $formkit: number
+          name: bytesPerMinuteThreshold
+          label: "单 IP 每分钟流量阈值（bytes）"
+          min: 1
+          value: 52428800
+        - $formkit: number
+          name: singleRequestBytesThreshold
+          label: "单次请求总流量阈值（bytes）"
+          min: 1
+          value: 10485760
+        - $formkit: number
+          name: serverErrorsPerMinuteThreshold
+          label: "单 IP 每分钟 5xx 错误阈值"
+          min: 1
+          value: 10
+        - $formkit: number
+          name: alertCooldownSeconds
+          label: "同类告警冷却时间（秒）"
+          min: 1
+          value: 60

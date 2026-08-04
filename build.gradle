@@ -4,7 +4,7 @@ plugins {
     id "run.halo.plugin.devtools" version "0.6.2"
 }
 
-group 'run.halo.starter'
+group 'run.halo.traffic.monitor'
 
 repositories {
     maven {
@@ -16,12 +16,13 @@ repositories {
             includeGroupAndSubgroups('run.halo')
         }
     }
+    // 国内网络下优先使用 Central 镜像，仍保留 mavenCentral 回退。
+    maven { url = 'https://maven.aliyun.com/repository/public' }
     mavenCentral()
 }
 
 dependencies {
-    // TODO Change to a released version once available
-    implementation platform('run.halo.tools.platform:plugin:2.23.0-SNAPSHOT')
+    implementation platform('run.halo.tools.platform:plugin:2.25.0')
     compileOnly 'run.halo.app:api'
 
     testImplementation 'run.halo.app:api'
@@ -60,5 +61,6 @@ tasks.named('generatePluginComponentsIdx') {
 }
 
 halo {
-    version = '2.23.0-beta.2'
+    version = '2.25.4'
+    debug = true
 }
