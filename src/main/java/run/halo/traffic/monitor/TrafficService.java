@@ -6,6 +6,7 @@ import static run.halo.traffic.monitor.TrafficModels.AccessLogPage;
 import static run.halo.traffic.monitor.TrafficModels.BlockView;
 import static run.halo.traffic.monitor.TrafficModels.Dashboard;
 import static run.halo.traffic.monitor.TrafficModels.IpView;
+import static run.halo.traffic.monitor.TrafficModels.IpCount;
 import static run.halo.traffic.monitor.TrafficModels.Summary;
 import static run.halo.traffic.monitor.TrafficModels.TimelinePoint;
 import static run.halo.traffic.monitor.TrafficModels.TrafficRecord;
@@ -78,25 +79,39 @@ public class TrafficService {
 
         IpStats stats = ipStats.computeIfAbsent(record.ip(), ignored -> new IpStats(record.timestamp()));
         WindowState window = stats.add(record);
+        List<String> triggeredAnomalies = new ArrayList<>();
 
         if (window.requests() >= rules.getRequestsPerMinuteThreshold()) {
             maybeAlert(record, "RATE", "high", "1 分钟请求数 " + window.requests()
                 + " 已超过阈值 " + rules.getRequestsPerMinuteThreshold(), rules);
+            triggeredAnomalies.add("RATE");
         }
         if (window.bytes() >= rules.getBytesPerMinuteThreshold()) {
             maybeAlert(record, "BANDWIDTH", "high", "1 分钟流量 " + window.bytes()
                 + " bytes 已超过阈值 " + rules.getBytesPerMinuteThreshold(), rules);
+            triggeredAnomalies.add("BANDWIDTH");
         }
         if (record.totalBytes() >= rules.getSingleRequestBytesThreshold()) {
             maybeAlert(record, "LARGE_TRANSFER", "medium", "单次请求流量 "
                 + record.totalBytes() + " bytes 超过阈值", rules);
+            triggeredAnomalies.add("LARGE_TRANSFER");
         }
         if (window.serverErrors() >= rules.getServerErrorsPerMinuteThreshold()) {
             maybeAlert(record, "SERVER_ERROR_BURST", "high", "1 分钟 5xx 错误数 "
                 + window.serverErrors() + " 已超过阈值", rules);
+            triggeredAnomalies.add("SERVER_ERROR_BURST");
         }
         if (SUSPICIOUS_PATH.matcher(record.path()).find()) {
             maybeAlert(record, "SUSPICIOUS_PATH", "medium", "访问了常见扫描路径", rules);
+            triggeredAnomalies.add("SUSPICIOUS_PATH");
+        }
+        if (rules.isAutoBlockTrafficAnomalies()
+            && !triggeredAnomalies.isEmpty()
+            && !isWhitelisted(record.ip(), rules)) {
+            String types = String.join(",", triggeredAnomalies);
+            blockIp(record.ip(), "异常流量告警：" + types, "auto-traffic", 1_440);
+            maybeAlert(record, "IP_AUTO_BLOCKED", "high",
+                "异常流量告警后已自动封禁 IP 24 小时：" + types, rules);
         }
 
         storeAccessDetail(record, response, rules.getMaxStoredRecords());
@@ -229,6 +244,16 @@ public class TrafficService {
         )) != null;
     }
 
+    public boolean acknowledgeAndBlock(String id, int durationMinutes) {
+        AlertView alert = alerts.get(id);
+        if (alert == null) {
+            return false;
+        }
+        blockIp(alert.ip(), "确认告警后封禁：" + alert.type(), "alert-confirm",
+            durationMinutes);
+        return acknowledge(id);
+    }
+
     public boolean isWhitelisted(String ip, TrafficMonitorProperties rules) {
         return IpRuleMatcher.matches(ip, rules.getIpWhitelist());
     }
@@ -261,7 +286,7 @@ public class TrafficService {
             return Optional.empty();
         }
         long now = clock.millis();
-        long expiresAt = now + Math.max(1, durationMinutes) * MINUTE_MS;
+        long expiresAt = durationMinutes <= 0 ? 0 : now + (long) durationMinutes * MINUTE_MS;
         BlockEntry entry = blockedIps.compute(normalized, (ignored, current) -> {
             if (current == null || current.isExpired(now)) {
                 return new BlockEntry(now, expiresAt, safeText(reason, "手动封禁"),
@@ -488,6 +513,7 @@ public class TrafficService {
         private final LongAdder responseBytes = new LongAdder();
         private final LongAdder errors = new LongAdder();
         private final Set<String> ips = ConcurrentHashMap.newKeySet();
+        private final Map<String, LongAdder> ipRequests = new ConcurrentHashMap<>();
 
         void add(TrafficRecord record) {
             requests.increment();
@@ -497,6 +523,7 @@ public class TrafficService {
                 errors.increment();
             }
             ips.add(record.ip());
+            ipRequests.computeIfAbsent(record.ip(), ignored -> new LongAdder()).increment();
         }
     }
 
@@ -505,16 +532,35 @@ public class TrafficService {
         private long requestBytes;
         private long responseBytes;
         private long errors;
+        private final Map<String, Long> ipRequests = new ConcurrentHashMap<>();
 
         synchronized void add(Bucket bucket) {
             requests += bucket.requests.sum();
             requestBytes += bucket.requestBytes.sum();
             responseBytes += bucket.responseBytes.sum();
             errors += bucket.errors.sum();
+            bucket.ipRequests.forEach((ip, count) -> ipRequests.merge(ip, count.sum(), Long::sum));
         }
 
         synchronized TimelinePoint toView(long timestamp) {
-            return new TimelinePoint(timestamp, requests, requestBytes, responseBytes, errors);
+            List<Map.Entry<String, Long>> sorted = ipRequests.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed()
+                    .thenComparing(Map.Entry.comparingByKey()))
+                .toList();
+            List<IpCount> counts = new ArrayList<>();
+            long other = 0;
+            for (int index = 0; index < sorted.size(); index++) {
+                Map.Entry<String, Long> entry = sorted.get(index);
+                if (index < 8) {
+                    counts.add(new IpCount(entry.getKey(), entry.getValue()));
+                } else {
+                    other += entry.getValue();
+                }
+            }
+            if (other > 0) {
+                counts.add(new IpCount("其他", other));
+            }
+            return new TimelinePoint(timestamp, requests, requestBytes, responseBytes, errors, counts);
         }
     }
 
@@ -588,11 +634,13 @@ public class TrafficService {
         }
 
         private boolean isExpired(long now) {
-            return now >= expiresAt.get();
+            long value = expiresAt.get();
+            return value > 0 && now >= value;
         }
 
         private void extend(long newExpiresAt, String newReason, String newSource) {
-            expiresAt.accumulateAndGet(newExpiresAt, Math::max);
+            expiresAt.updateAndGet(current -> current == 0 || newExpiresAt == 0
+                ? 0 : Math.max(current, newExpiresAt));
             reason = newReason;
             source = newSource;
         }

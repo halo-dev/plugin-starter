@@ -51,6 +51,32 @@ spec:
           label: "自动封禁时长（分钟）"
           min: 1
           value: 1440
+        - $formkit: checkbox
+          name: autoBlockTrafficAnomalies
+          label: "异常流量告警后自动封禁 24 小时"
+          help: "适用于速率、带宽、单次大流量、5xx 爆发和扫描路径告警；白名单地址始终放行。"
+          value: true
+        - $formkit: checkbox
+          name: captureResponseHeaders
+          label: "保存响应头用于请求详情"
+          value: true
+        - $formkit: checkbox
+          name: captureResponseBody
+          label: "保存文本响应正文用于请求详情"
+          help: "仅保存文本、JSON、XML、HTML 等响应，二进制响应只记录大小和类型。"
+          value: true
+        - $formkit: number
+          name: responseBodyMaxBytes
+          label: "单条响应正文保存上限（bytes）"
+          min: 1024
+          max: 1048576
+          value: 32768
+        - $formkit: number
+          name: maxStoredRecords
+          label: "最多保存请求明细条数"
+          min: 100
+          max: 20000
+          value: 2000
         - $formkit: number
           name: requestsPerMinuteThreshold
           label: "单 IP 每分钟请求数阈值"

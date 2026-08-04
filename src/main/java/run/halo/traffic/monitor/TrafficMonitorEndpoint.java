@@ -100,14 +100,22 @@ public class TrafficMonitorEndpoint implements CustomEndpoint {
     }
 
     private Mono<ServerResponse> acknowledge(ServerRequest request) {
-        if (!trafficService.acknowledge(request.pathVariable("id"))) {
+        if (!trafficService.acknowledgeAndBlock(request.pathVariable("id"), 1_440)) {
             return ServerResponse.notFound().build();
         }
         return ServerResponse.noContent().build();
     }
 
     private Mono<ServerResponse> block(ServerRequest request) {
-        int minutes = Math.max(1, Math.min(525_600, queryInt(request, "minutes", 1_440)));
+        String mode = request.queryParam("mode").orElse("24h");
+        int minutes = switch (mode) {
+            case "permanent" -> 0;
+            case "7d" -> 10_080;
+            case "30d" -> 43_200;
+            case "custom" -> Math.max(1, Math.min(525_600,
+                queryInt(request, "minutes", 1_440)));
+            default -> 1_440;
+        };
         String reason = request.queryParam("reason").orElse("Console 手动封禁");
         return trafficService.blockIp(request.pathVariable("ip"), reason, "manual", minutes)
             .map(value -> ServerResponse.ok().bodyValue(value))

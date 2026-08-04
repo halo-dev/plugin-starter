@@ -19,6 +19,7 @@ type TimelinePoint = {
   requestBytes: number
   responseBytes: number
   errors: number
+  ips: { ip: string; requests: number }[]
 }
 
 type IpView = {
@@ -53,6 +54,47 @@ type BlockView = {
   lastHit: number
 }
 
+type AccessLogView = {
+  id: string
+  timestamp: number
+  ip: string
+  method: string
+  path: string
+  status: number
+  requestBytes: number
+  responseBytes: number
+  durationMs: number
+  contentType: string
+  responsePreview: string
+  bodyCaptured: boolean
+  bodyTruncated: boolean
+}
+
+type AccessLogPage = {
+  items: AccessLogView[]
+  total: number
+  offset: number
+  limit: number
+}
+
+type AccessDetail = {
+  id: string
+  timestamp: number
+  ip: string
+  method: string
+  path: string
+  status: number
+  requestBytes: number
+  responseBytes: number
+  durationMs: number
+  userAgent: string
+  contentType: string
+  responseHeaders: Record<string, string[]>
+  responseBody: string
+  bodyCaptured: boolean
+  bodyTruncated: boolean
+}
+
 type Dashboard = {
   summary: Summary
   timeline: TimelinePoint[]
@@ -68,6 +110,13 @@ const loading = ref(true)
 const error = ref('')
 const minutes = ref(60)
 const live = ref(false)
+const records = ref<AccessLogPage>({ items: [], total: 0, offset: 0, limit: 100 })
+const recordsLoading = ref(false)
+const recordFilters = ref({ ip: '', path: '', status: '' })
+const selectedRecord = ref<AccessDetail>()
+const detailLoading = ref(false)
+const blockModes = ref<Record<string, string>>({})
+const selectedTimelineTimestamp = ref<number>()
 let source: EventSource | undefined
 let fallbackTimer: number | undefined
 
@@ -75,10 +124,29 @@ const maxRequests = computed(() =>
   Math.max(1, ...(dashboard.value?.timeline.map((point) => point.requests) ?? [1])),
 )
 const blockedSet = computed(() => new Set(dashboard.value?.blockedIps.map((item) => item.ip) ?? []))
+const activeTimelinePoint = computed(() => {
+  const points = dashboard.value?.timeline ?? []
+  return (
+    points.find((point) => point.timestamp === selectedTimelineTimestamp.value) ??
+    [...points].reverse().find((point) => point.requests > 0)
+  )
+})
 
 function barHeight(value: number) {
   if (value === 0) return '2px'
   return `${Math.max(8, Math.round((value / maxRequests.value) * 180))}px`
+}
+
+function ipColor(ip: string) {
+  if (ip === '其他') return '#aab4c5'
+  let hash = 0
+  for (let index = 0; index < ip.length; index += 1) hash = (hash * 31 + ip.charCodeAt(index)) | 0
+  return `hsl(${Math.abs(hash) % 360} 72% 57%)`
+}
+
+function timelineTitle(point: TimelinePoint) {
+  const ips = point.ips.map((item) => `${item.ip}: ${item.requests} 次`).join('\n')
+  return `${formatTime(point.timestamp, true)}\n总访问 ${point.requests}\n${ips}\n流量 ${formatBytes(point.requestBytes + point.responseBytes)}\n5xx ${point.errors}`
 }
 
 function formatBytes(value: number) {
@@ -99,6 +167,22 @@ function formatTime(timestamp: number, withDate = false) {
   }).format(new Date(timestamp))
 }
 
+function formatBlockExpiry(timestamp: number) {
+  return timestamp === 0 ? '永久' : formatTime(timestamp, true)
+}
+
+function responseBody(detail: AccessDetail) {
+  if (!detail.responseBody) return ''
+  if (detail.contentType.toLowerCase().includes('json')) {
+    try {
+      return JSON.stringify(JSON.parse(detail.responseBody), null, 2)
+    } catch {
+      return detail.responseBody
+    }
+  }
+  return detail.responseBody
+}
+
 async function loadDashboard() {
   try {
     const { data } = await axiosInstance.get<Dashboard>(`${API}/dashboard`, {
@@ -111,6 +195,61 @@ async function loadDashboard() {
   } finally {
     loading.value = false
   }
+}
+
+async function loadRecords() {
+  recordsLoading.value = true
+  try {
+    const status = recordFilters.value.status.trim()
+    const { data } = await axiosInstance.get<AccessLogPage>(`${API}/records`, {
+      params: {
+        ip: recordFilters.value.ip.trim() || undefined,
+        path: recordFilters.value.path.trim() || undefined,
+        status: status || undefined,
+        minutes: minutes.value,
+        limit: 100,
+        offset: 0,
+      },
+    })
+    records.value = data
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : '加载请求明细失败'
+  } finally {
+    recordsLoading.value = false
+  }
+}
+
+async function openRecord(id: string) {
+  detailLoading.value = true
+  selectedRecord.value = undefined
+  try {
+    const { data } = await axiosInstance.get<AccessDetail>(
+      `${API}/records/${encodeURIComponent(id)}`,
+    )
+    selectedRecord.value = data
+  } catch (reason) {
+    error.value = reason instanceof Error ? reason.message : '加载响应详情失败'
+  } finally {
+    detailLoading.value = false
+  }
+}
+
+function clearRecordFilters() {
+  recordFilters.value = { ip: '', path: '', status: '' }
+  void loadRecords()
+}
+
+function filterByIp(ip: string) {
+  recordFilters.value.ip = ip
+  void loadRecords()
+}
+
+function selectedBlockMode(ip: string) {
+  return blockModes.value[ip] ?? '24h'
+}
+
+function setBlockMode(ip: string, event: Event) {
+  blockModes.value[ip] = (event.target as HTMLSelectElement).value
 }
 
 function startRealtime() {
@@ -144,12 +283,20 @@ function stopRealtime() {
 async function acknowledge(alert: AlertView) {
   await axiosInstance.post(`${API}/alerts/${encodeURIComponent(alert.id)}/acknowledge`)
   alert.acknowledged = true
+  await loadDashboard()
 }
 
 async function blockIp(ip: string) {
-  if (!window.confirm(`封禁 ${ip} 24 小时？白名单地址仍会放行。`)) return
+  const mode = selectedBlockMode(ip)
+  const labels: Record<string, string> = {
+    '24h': '24 小时',
+    '7d': '7 天',
+    '30d': '30 天',
+    permanent: '永久',
+  }
+  if (!window.confirm(`封禁 ${ip}：${labels[mode]}？白名单地址仍会放行。`)) return
   await axiosInstance.post(`${API}/blocks/${encodeURIComponent(ip)}`, undefined, {
-    params: { minutes: 1440, reason: 'Console 手动封禁' },
+    params: { mode, reason: `Console 手动封禁（${labels[mode]}）` },
   })
   await loadDashboard()
 }
@@ -164,16 +311,19 @@ async function resetData() {
   if (!window.confirm('确定清空当前访问统计和告警吗？')) return
   await axiosInstance.delete(`${API}/data`)
   await loadDashboard()
+  await loadRecords()
 }
 
 watch(minutes, async () => {
   loading.value = true
   await loadDashboard()
+  await loadRecords()
   startRealtime()
 })
 
 onMounted(async () => {
   await loadDashboard()
+  await loadRecords()
   startRealtime()
 })
 
@@ -239,9 +389,13 @@ onBeforeUnmount(stopRealtime)
         <div class="panel-title">
           <div>
             <h2>访问时间柱状图</h2>
-            <p>每根柱代表对应时间桶内的 HTTP 请求数</p>
+            <p>柱子总高度为访问次数，颜色按来源 IP 堆叠；点击柱子查看 IP 明细</p>
           </div>
-          <div class="legend"><i></i>访问次数</div>
+          <div class="ip-legend">
+            <span v-for="item in dashboard.topIps.slice(0, 5)" :key="item.ip">
+              <i :style="{ background: ipColor(item.ip) }"></i>{{ item.ip }}
+            </span>
+          </div>
         </div>
         <div class="chart-shell">
           <div class="y-guide">
@@ -254,19 +408,130 @@ onBeforeUnmount(stopRealtime)
               v-for="(point, index) in dashboard.timeline"
               :key="point.timestamp"
               class="bar-slot"
-              :title="`${formatTime(point.timestamp, true)}\n请求 ${point.requests}\n流量 ${formatBytes(point.requestBytes + point.responseBytes)}\n5xx ${point.errors}`"
+              :title="timelineTitle(point)"
             >
-              <div
+              <button
+                type="button"
                 class="bar"
-                :class="{ empty: point.requests === 0 }"
+                :class="{
+                  empty: point.requests === 0,
+                  selected: activeTimelinePoint?.timestamp === point.timestamp,
+                }"
                 :style="{ height: barHeight(point.requests) }"
-              ></div>
+                @click="selectedTimelineTimestamp = point.timestamp"
+              >
+                <i
+                  v-for="ip in point.ips"
+                  :key="ip.ip"
+                  class="bar-segment"
+                  :style="{ flexGrow: ip.requests, background: ipColor(ip.ip) }"
+                  :title="`${ip.ip}: ${ip.requests} 次`"
+                ></i>
+              </button>
               <span v-if="index % Math.max(1, Math.floor(dashboard.timeline.length / 8)) === 0">
                 {{ formatTime(point.timestamp) }}
               </span>
             </div>
           </div>
         </div>
+        <div v-if="activeTimelinePoint" class="chart-ip-detail">
+          <strong
+            >{{ formatTime(activeTimelinePoint.timestamp, true) }} · 总访问
+            {{ activeTimelinePoint.requests }} 次</strong
+          >
+          <div>
+            <span v-for="item in activeTimelinePoint.ips" :key="item.ip">
+              <i :style="{ background: ipColor(item.ip) }"></i>
+              <code>{{ item.ip }}</code>
+              <b>{{ item.requests }} 次</b>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel records-panel">
+        <div class="panel-title records-title">
+          <div>
+            <h2>请求明细与响应数据</h2>
+            <p>按 IP、访问路径和状态码筛选；详情包含响应头与限定长度的文本响应正文。</p>
+          </div>
+          <span class="record-count">{{ records.total.toLocaleString() }} RECORDS</span>
+        </div>
+        <form class="filter-bar" @submit.prevent="loadRecords">
+          <label>
+            <span>IP</span>
+            <input v-model="recordFilters.ip" type="search" placeholder="例如 203.0.113.8" />
+          </label>
+          <label class="path-filter">
+            <span>访问路径</span>
+            <input v-model="recordFilters.path" type="search" placeholder="例如 /api/posts" />
+          </label>
+          <label>
+            <span>状态码</span>
+            <input
+              v-model="recordFilters.status"
+              type="number"
+              min="100"
+              max="599"
+              placeholder="全部"
+            />
+          </label>
+          <button class="filter-button" type="submit">筛选</button>
+          <button class="clear-button" type="button" @click="clearRecordFilters">清空</button>
+        </form>
+        <div class="table-wrap records-table">
+          <table>
+            <thead>
+              <tr>
+                <th>时间</th>
+                <th>IP</th>
+                <th>请求</th>
+                <th>状态</th>
+                <th>响应</th>
+                <th>耗时</th>
+                <th>详情</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in records.items" :key="item.id">
+                <td>{{ formatTime(item.timestamp, true) }}</td>
+                <td>
+                  <button class="link-button" type="button" @click="filterByIp(item.ip)">
+                    {{ item.ip }}
+                  </button>
+                </td>
+                <td class="request-cell">
+                  <span class="method-pill">{{ item.method }}</span>
+                  <code :title="item.path">{{ item.path }}</code>
+                </td>
+                <td>
+                  <span class="status" :class="{ bad: item.status >= 400 }">{{ item.status }}</span>
+                </td>
+                <td>
+                  <strong>{{ formatBytes(item.responseBytes) }}</strong>
+                  <small class="response-preview">{{
+                    item.responsePreview || item.contentType || '未保存正文'
+                  }}</small>
+                </td>
+                <td>{{ item.durationMs }} ms</td>
+                <td>
+                  <button class="mini-button detail" type="button" @click="openRecord(item.id)">
+                    查看响应包
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="recordsLoading">
+                <td colspan="7" class="empty-row">正在筛选请求明细……</td>
+              </tr>
+              <tr v-else-if="records.items.length === 0">
+                <td colspan="7" class="empty-row">当前条件下没有请求明细</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p v-if="records.total > records.limit" class="record-note">
+          当前显示最新 {{ records.limit }} 条，共匹配 {{ records.total }} 条。
+        </p>
       </section>
 
       <div class="content-grid">
@@ -312,14 +577,21 @@ onBeforeUnmount(stopRealtime)
                     >
                       解封
                     </button>
-                    <button
-                      v-else
-                      class="mini-button block"
-                      type="button"
-                      @click="blockIp(item.ip)"
-                    >
-                      封禁
-                    </button>
+                    <div v-else class="block-action">
+                      <select
+                        :value="selectedBlockMode(item.ip)"
+                        aria-label="封禁时长"
+                        @change="setBlockMode(item.ip, $event)"
+                      >
+                        <option value="24h">24 小时</option>
+                        <option value="7d">7 天</option>
+                        <option value="30d">30 天</option>
+                        <option value="permanent">永久</option>
+                      </select>
+                      <button class="mini-button block" type="button" @click="blockIp(item.ip)">
+                        封禁
+                      </button>
+                    </div>
                   </td>
                 </tr>
                 <tr v-if="dashboard.topIps.length === 0">
@@ -334,7 +606,7 @@ onBeforeUnmount(stopRealtime)
           <div class="panel-title">
             <div>
               <h2>异常流量告警</h2>
-              <p>速率、带宽、5xx 爆发、大流量与扫描路径</p>
+              <p>速率、带宽、5xx 爆发、大流量与扫描路径；命中后自动封禁 24 小时</p>
             </div>
           </div>
           <div class="alert-list">
@@ -354,7 +626,7 @@ onBeforeUnmount(stopRealtime)
                 <code>{{ alert.ip }} · {{ alert.path }}</code>
               </div>
               <button v-if="!alert.acknowledged" type="button" @click="acknowledge(alert)">
-                确认
+                确认并封禁 24h
               </button>
               <span v-else class="done">已确认</span>
             </article>
@@ -367,7 +639,7 @@ onBeforeUnmount(stopRealtime)
         <div class="panel-title">
           <div>
             <h2>IP 封禁列表</h2>
-            <p>登录失败达到阈值后自动封禁；白名单请在插件设置中维护，默认放行本机地址。</p>
+            <p>登录失败或异常流量可自动封禁；手动支持 24 小时、7 天、30 天和永久封禁。</p>
           </div>
           <span class="block-count">{{ dashboard.blockedIps.length }} ACTIVE</span>
         </div>
@@ -394,7 +666,11 @@ onBeforeUnmount(stopRealtime)
                 </td>
                 <td>{{ item.reason }}</td>
                 <td>{{ formatTime(item.blockedAt, true) }}</td>
-                <td>{{ formatTime(item.expiresAt, true) }}</td>
+                <td>
+                  <strong :class="{ permanent: item.expiresAt === 0 }">{{
+                    formatBlockExpiry(item.expiresAt)
+                  }}</strong>
+                </td>
                 <td>{{ item.hitCount }}</td>
                 <td>
                   <button class="mini-button unblock" type="button" @click="unblockIp(item.ip)">
@@ -414,6 +690,78 @@ onBeforeUnmount(stopRealtime)
         <span>最后更新：{{ formatTime(dashboard.generatedAt, true) }}</span>
         <button type="button" class="danger-link" @click="resetData">清空监控数据</button>
       </footer>
+
+      <div
+        v-if="detailLoading || selectedRecord"
+        class="detail-backdrop"
+        @click.self="selectedRecord = undefined"
+      >
+        <aside class="detail-drawer" aria-label="响应包详情">
+          <div v-if="detailLoading" class="loading-state">正在读取响应包……</div>
+          <template v-else-if="selectedRecord">
+            <header class="detail-header">
+              <div>
+                <span>REQUEST / RESPONSE</span>
+                <h2>响应包详情</h2>
+              </div>
+              <button type="button" aria-label="关闭" @click="selectedRecord = undefined">×</button>
+            </header>
+            <dl class="detail-meta">
+              <div>
+                <dt>来源 IP</dt>
+                <dd>{{ selectedRecord.ip }}</dd>
+              </div>
+              <div>
+                <dt>访问时间</dt>
+                <dd>{{ formatTime(selectedRecord.timestamp, true) }}</dd>
+              </div>
+              <div>
+                <dt>请求</dt>
+                <dd>{{ selectedRecord.method }} {{ selectedRecord.path }}</dd>
+              </div>
+              <div>
+                <dt>响应状态</dt>
+                <dd>{{ selectedRecord.status }}</dd>
+              </div>
+              <div>
+                <dt>流量</dt>
+                <dd>
+                  请求 {{ formatBytes(selectedRecord.requestBytes) }} / 响应
+                  {{ formatBytes(selectedRecord.responseBytes) }}
+                </dd>
+              </div>
+              <div>
+                <dt>耗时</dt>
+                <dd>{{ selectedRecord.durationMs }} ms</dd>
+              </div>
+              <div>
+                <dt>User-Agent</dt>
+                <dd>{{ selectedRecord.userAgent || '-' }}</dd>
+              </div>
+              <div>
+                <dt>Content-Type</dt>
+                <dd>{{ selectedRecord.contentType || '-' }}</dd>
+              </div>
+            </dl>
+            <section class="packet-section">
+              <h3>响应头</h3>
+              <pre><template v-for="(values, name) in selectedRecord.responseHeaders" :key="name">{{ name }}: {{ values.join(', ') }}
+</template><template v-if="Object.keys(selectedRecord.responseHeaders).length === 0">未保存响应头</template></pre>
+            </section>
+            <section class="packet-section body-section">
+              <div class="packet-title">
+                <h3>响应正文</h3>
+                <span v-if="selectedRecord.bodyTruncated">已按配置截断</span>
+              </div>
+              <pre>{{
+                selectedRecord.bodyCaptured
+                  ? responseBody(selectedRecord) || '空响应正文'
+                  : '该响应为二进制、未启用正文抓取或未写入响应体。'
+              }}</pre>
+            </section>
+          </template>
+        </aside>
+      </div>
     </template>
   </div>
 </template>
@@ -463,7 +811,8 @@ h1 {
   justify-content: flex-end;
 }
 select,
-.ghost-button {
+.ghost-button,
+input {
   height: 38px;
   border: 1px solid #dce3ef;
   border-radius: 9px;
@@ -561,17 +910,26 @@ button {
   margin: 0 0 4px;
   font-size: 16px;
 }
-.legend {
+.ip-legend {
+  display: flex;
+  max-width: 60%;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   color: #758095;
-  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 9px;
 }
-.legend i {
+.ip-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.ip-legend i {
   display: inline-block;
-  width: 9px;
-  height: 9px;
-  margin-right: 6px;
-  border-radius: 2px;
-  background: linear-gradient(#547bff, #355cf2);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
 }
 .chart-panel {
   margin-bottom: 14px;
@@ -612,14 +970,29 @@ button {
   flex-direction: column;
 }
 .bar {
+  display: flex;
   width: min(72%, 16px);
   min-width: 2px;
+  overflow: hidden;
+  flex-direction: column-reverse;
+  border: 0;
   border-radius: 4px 4px 1px 1px;
+  padding: 0;
   background: linear-gradient(180deg, #688aff, #365df2);
   transition: height 0.25s ease;
 }
+.bar:hover,
+.bar.selected {
+  outline: 2px solid rgb(67 109 255 / 28%);
+  outline-offset: 2px;
+}
 .bar.empty {
   background: #dce3ef;
+}
+.bar-segment {
+  width: 100%;
+  min-height: 1px;
+  flex-basis: 0;
 }
 .bar-slot > span {
   height: 22px;
@@ -627,6 +1000,46 @@ button {
   color: #9aa3b3;
   font-size: 9px;
   white-space: nowrap;
+}
+.chart-ip-detail {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 34px;
+  margin-top: 10px;
+  border-radius: 10px;
+  padding: 8px 11px;
+  color: #536077;
+  background: #f4f7fc;
+  font-size: 10px;
+}
+.chart-ip-detail > strong {
+  white-space: nowrap;
+}
+.chart-ip-detail > div {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.chart-ip-detail span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #e0e6ef;
+  border-radius: 999px;
+  padding: 4px 7px;
+  background: white;
+}
+.chart-ip-detail i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.chart-ip-detail code {
+  color: #45516a;
+}
+.chart-ip-detail b {
+  color: #172033;
 }
 
 .content-grid {
@@ -677,6 +1090,107 @@ td code {
   color: #c6374b;
   background: #fdecef;
 }
+.records-panel {
+  margin-bottom: 14px;
+}
+.records-title {
+  margin-bottom: 14px;
+}
+.record-count {
+  border-radius: 999px;
+  padding: 5px 9px;
+  color: #3157dc;
+  background: #edf2ff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.filter-bar {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(260px, 1.4fr) 120px auto auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  padding: 12px;
+  background: #f6f8fc;
+}
+.filter-bar label {
+  display: grid;
+  gap: 5px;
+}
+.filter-bar label > span {
+  color: #788398;
+  font-size: 10px;
+  font-weight: 700;
+}
+.filter-bar input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.filter-button,
+.clear-button {
+  height: 38px;
+  border: 0;
+  border-radius: 9px;
+  padding: 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.filter-button {
+  color: white;
+  background: #436dff;
+}
+.clear-button {
+  color: #667188;
+  background: #e9edf5;
+}
+.records-table {
+  max-height: 520px;
+}
+.request-cell {
+  max-width: 380px;
+}
+.request-cell code {
+  display: inline-block;
+  max-width: 310px;
+  overflow: hidden;
+  vertical-align: middle;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.method-pill {
+  display: inline-flex;
+  margin-right: 7px;
+  border-radius: 5px;
+  padding: 3px 5px;
+  color: #3157dc;
+  background: #edf2ff;
+  font-size: 9px;
+  font-weight: 800;
+}
+.link-button {
+  border: 0;
+  padding: 0;
+  color: #3157dc;
+  background: transparent;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+}
+.response-preview {
+  display: block;
+  max-width: 260px;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #9aa3b3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.record-note {
+  margin: 10px 0 0;
+  color: #8c96a9;
+  font-size: 10px;
+}
 .mini-button {
   border: 0;
   border-radius: 7px;
@@ -691,6 +1205,24 @@ td code {
 .mini-button.unblock {
   color: #167657;
   background: #e7f8f1;
+}
+.mini-button.detail {
+  color: #3157dc;
+  background: #edf2ff;
+  white-space: nowrap;
+}
+.block-action {
+  display: flex;
+  gap: 5px;
+}
+.block-action select {
+  width: 82px;
+  height: 29px;
+  padding: 0 5px;
+  font-size: 10px;
+}
+.permanent {
+  color: #c6374b;
 }
 .protection-panel {
   margin-top: 14px;
@@ -806,6 +1338,103 @@ footer {
   background: #fff2f4;
   font-size: 12px;
 }
+.detail-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  justify-content: flex-end;
+  background: rgb(18 27 46 / 42%);
+  backdrop-filter: blur(2px);
+}
+.detail-drawer {
+  width: min(720px, 92vw);
+  height: 100%;
+  box-sizing: border-box;
+  overflow: auto;
+  padding: 24px;
+  background: #f7f9fc;
+  box-shadow: -18px 0 55px rgb(12 24 49 / 18%);
+}
+.detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.detail-header span {
+  color: #4f6fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.detail-header h2 {
+  margin: 4px 0 0;
+}
+.detail-header button {
+  border: 0;
+  color: #738096;
+  background: transparent;
+  font-size: 28px;
+}
+.detail-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #e0e6f0;
+  border-radius: 12px;
+  background: #e0e6f0;
+}
+.detail-meta > div {
+  min-width: 0;
+  padding: 11px 13px;
+  background: white;
+}
+.detail-meta dt {
+  color: #8b95a7;
+  font-size: 9px;
+  font-weight: 700;
+}
+.detail-meta dd {
+  margin: 4px 0 0;
+  overflow-wrap: anywhere;
+  color: #303c54;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+}
+.packet-section {
+  margin-top: 16px;
+}
+.packet-section h3 {
+  margin: 0 0 7px;
+  font-size: 12px;
+}
+.packet-section pre {
+  min-height: 80px;
+  max-height: 360px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid #1d2a40;
+  border-radius: 11px;
+  padding: 14px;
+  color: #c9d7ed;
+  background: #101828;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.packet-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.packet-title span {
+  color: #d14a5c;
+  font-size: 10px;
+}
 .loading-state {
   padding: 80px;
   color: #8a94a6;
@@ -844,6 +1473,12 @@ footer {
   }
   .bar-chart {
     min-width: 700px;
+  }
+  .filter-bar {
+    grid-template-columns: 1fr;
+  }
+  .detail-meta {
+    grid-template-columns: 1fr;
   }
 }
 </style>

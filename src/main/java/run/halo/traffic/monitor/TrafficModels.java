@@ -38,8 +38,11 @@ public final class TrafficModels {
         long requests,
         long requestBytes,
         long responseBytes,
-        long errors
+        long errors,
+        List<IpCount> ips
     ) {}
+
+    public record IpCount(String ip, long requests) {}
 
     public record IpView(
         String ip,

@@ -13,7 +13,7 @@ spec:
     name: 0rion
   logo: logo.png
   displayName: "IP 流量监控"
-  description: "实时统计 IP 访问和流量，支持异常告警、白名单及登录失败自动封禁 IP。"
+  description: "实时统计与筛选访问明细，查看响应数据，并支持白名单、异常告警和多模式 IP 封禁。"
   license:
     - name: "GPL-3.0"
       url: "https://github.com/halo-dev/plugin-starter/blob/main/LICENSE"

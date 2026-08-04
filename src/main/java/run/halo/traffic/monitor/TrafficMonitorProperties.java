@@ -19,6 +19,7 @@ public class TrafficMonitorProperties {
     private boolean captureResponseBody = true;
     private int responseBodyMaxBytes = 32_768;
     private int maxStoredRecords = 2_000;
+    private boolean autoBlockTrafficAnomalies = true;
 
     public boolean isEnabled() {
         return enabled;
@@ -162,6 +163,14 @@ public class TrafficMonitorProperties {
 
     public void setMaxStoredRecords(int value) {
         this.maxStoredRecords = Math.max(100, Math.min(20_000, value));
+    }
+
+    public boolean isAutoBlockTrafficAnomalies() {
+        return autoBlockTrafficAnomalies;
+    }
+
+    public void setAutoBlockTrafficAnomalies(boolean value) {
+        this.autoBlockTrafficAnomalies = value;
     }
 
 }

@@ -6,6 +6,7 @@
 
 - 实时统计 IP、访问次数、首次/最后访问时间、最后路径和状态码。
 - 按 30 分钟、1 小时、6 小时、24 小时显示访问时间柱状图。
+- 柱状图按来源 IP 堆叠着色，点击时间柱直接查看该时间桶内各 IP 的访问次数。
 - 计算 HTTP request body 和 response body 字节数。
 - SSE 每 2 秒推送仪表盘快照，断线时自动降级为 5 秒轮询。
 - 异常检测：
@@ -15,10 +16,16 @@
   - 单 IP 每分钟 5xx 爆发；
   - `.env`、`wp-admin`、`phpmyadmin`、`actuator`等常见扫描路径。
 - 告警同时写入 Halo 日志与 Console 告警列表，支持确认处理。
+- 告警卡片点击“确认并封禁 24h”时，同步确认告警并封禁对应来源 IP。
 - IP 白名单支持单个 IPv4/IPv6 地址以及 CIDR 网段。
 - 识别 `POST /login` 登录失败；同一 IP 在指定窗口内达到阈值后立即返回 `403` 并进入封禁列表。
-- Console 支持对访问 IP 手动封禁 24 小时、查看封禁原因/拦截次数以及立即解封。
-- 访问时序、IP 统计和告警固定保留 7 天，超期数据每分钟自动清理。
+- Console 支持对访问 IP 手动选择封禁时长、查看封禁原因/拦截次数以及立即解封。
+- 异常流量告警触发后自动封禁来源 IP 24 小时，白名单地址始终放行。
+- 手动封禁支持 24 小时、7 天、30 天和永久四种模式。
+- 请求明细支持按 IP、访问路径、状态码和时间范围筛选。
+- 单条明细可查看请求信息、响应状态、响应头和文本响应正文；正文默认最多保存 32 KiB，超出部分标记为截断。
+- `Set-Cookie`、认证挑战等敏感响应头在详情中显示为 `[REDACTED]`。
+- 访问时序、IP 统计、告警和请求明细固定保留 7 天，超期数据每分钟自动清理。
 - 默认排除 Console、插件自身 API 和静态资源，避免统计回路。
 
 > 这里的“流量”是 Halo 应用层看到的 HTTP request/response body 字节，不包含 TCP/IP/TLS 包头、CDN 直接回源外流量或未进入 Halo 进程的数据包。
@@ -30,7 +37,7 @@
 3. 上传：
 
    ```text
-   build/libs/halo-plugin-traffic-monitor-1.1.0.jar
+   build/libs/halo-plugin-traffic-monitor-1.2.0.jar
    ```
 
 4. 启用插件，然后从左侧 **安全 -> IP 流量监控** 进入仪表盘。
@@ -58,9 +65,12 @@ proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
 | IP 白名单 | `127.0.0.1`、`::1` | 支持单 IP 和 CIDR；白名单始终放行 |
 | 登录失败阈值 | 5 次/10 分钟 | 达到阈值后自动封禁来源 IP |
 | 自动封禁时长 | 1,440 分钟 | 默认 24 小时，到期自动解封 |
+| 异常流量自动封禁 | 开启 | 告警命中后封禁来源 IP 24 小时 |
+| 响应正文保存上限 | 32,768 bytes | 仅文本、JSON、XML、HTML 等正文 |
+| 请求明细条数 | 2,000 | 超出后优先删除最旧明细 |
 | 日志保留 | 7 天 | 固定策略，超期自动清理 |
 
-当前 `1.1.0` 的统计与封禁状态采用进程内滚动窗口：插件重载或 Halo 重启后从空状态开始。配置中的白名单和阈值由 Halo 保存。
+当前 `1.2.0` 的统计、请求明细与封禁状态采用进程内滚动窗口：插件重载或 Halo 重启后从空状态开始。配置中的白名单和阈值由 Halo 保存。
 
 > 上线前先把管理端出口 IP 或管理网段加入白名单。若前面有 Nginx/CDN，请正确配置并开启“信任反向代理 IP 请求头”，否则所有访问可能被识别为代理 IP。
 
@@ -109,8 +119,10 @@ API 前缀：
 - `GET /ips?limit=100`
 - `GET /alerts?limit=100`
 - `GET /blocks`
+- `GET /records?ip=&path=&status=&minutes=1440&offset=0&limit=100`
+- `GET /records/{id}`
 - `GET /stream?minutes=60`
 - `POST /alerts/{id}/acknowledge`
-- `POST /blocks/{ip}?minutes=1440&reason=manual`
+- `POST /blocks/{ip}?mode=24h|7d|30d|permanent&reason=manual`
 - `DELETE /blocks/{ip}`
 - `DELETE /data`

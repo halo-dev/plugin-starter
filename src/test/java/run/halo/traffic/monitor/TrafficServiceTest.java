@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import run.halo.traffic.monitor.TrafficModels.TrafficRecord;
@@ -36,8 +38,11 @@ class TrafficServiceTest {
         assertEquals(350, summary.responseBytes());
         assertEquals(1, summary.errorRequests());
         assertEquals("203.0.113.1", service.topIps(10).getFirst().ip());
-        assertEquals(3, service.timeline(3, 1).stream()
-            .mapToLong(TrafficModels.TimelinePoint::requests).sum());
+        var timeline = service.timeline(3, 1);
+        assertEquals(3, timeline.stream().mapToLong(TrafficModels.TimelinePoint::requests).sum());
+        assertEquals(2, timeline.stream().flatMap(point -> point.ips().stream())
+            .filter(item -> item.ip().equals("203.0.113.1"))
+            .mapToLong(TrafficModels.IpCount::requests).sum());
     }
 
     @Test
@@ -53,8 +58,9 @@ class TrafficServiceTest {
         assertEquals(1, alerts.stream().filter(a -> a.type().equals("RATE")).count());
         var alert = alerts.getFirst();
         assertFalse(alert.acknowledged());
-        assertTrue(service.acknowledge(alert.id()));
+        assertTrue(service.acknowledgeAndBlock(alert.id(), 1_440));
         assertTrue(service.alerts(20).getFirst().acknowledged());
+        assertEquals("alert-confirm", service.blockedIps().getFirst().source());
     }
 
     @Test
@@ -78,6 +84,7 @@ class TrafficServiceTest {
         assertEquals(0, service.summary(10_080).requests());
         assertTrue(service.topIps(10).isEmpty());
         assertTrue(service.alerts(10).isEmpty());
+        assertTrue(service.accessLogs("", "", null, 0, 0, 10).items().isEmpty());
     }
 
     @Test
@@ -121,6 +128,50 @@ class TrafficServiceTest {
         service.blockIp("198.51.100.9", "test", "manual", 1);
         clock.advance(60_001L);
         assertTrue(service.blockedIps().isEmpty());
+    }
+
+    @Test
+    void trafficAnomalyImmediatelyBlocksIpForTwentyFourHours() {
+        rules.setRequestsPerMinuteThreshold(1);
+
+        record("198.51.100.88", "/normal", 200, 10, 20);
+
+        var block = service.blockedIps().getFirst();
+        assertEquals("198.51.100.88", block.ip());
+        assertEquals("auto-traffic", block.source());
+        assertEquals(24 * 60 * 60_000L, block.expiresAt() - block.blockedAt());
+        assertTrue(service.alerts(20).stream().anyMatch(a -> a.type().equals("IP_AUTO_BLOCKED")));
+    }
+
+    @Test
+    void permanentManualBlockDoesNotExpire() {
+        var block = service.blockIp("198.51.100.90", "permanent-test", "manual", 0).orElseThrow();
+        assertEquals(0, block.expiresAt());
+
+        clock.advance(TrafficService.RETENTION_MS * 2);
+
+        assertEquals(0, service.blockedIps().getFirst().expiresAt());
+        assertTrue(service.blockedAccess("198.51.100.90", clock.millis()).isPresent());
+    }
+
+    @Test
+    void filtersAccessLogsAndReturnsRedactedResponseDetail() {
+        var record = new TrafficRecord(clock.millis(), "203.0.113.55", "GET", "/api/posts/one",
+            200, 12, 32, 8, "JUnit");
+        var response = new TrafficModels.ResponseSnapshot(
+            "application/json",
+            Map.of("Content-Type", List.of("application/json"),
+                "Set-Cookie", List.of("SESSION=secret")),
+            "{\"ok\":true}", true, false);
+        service.record(record, rules, response);
+
+        var page = service.accessLogs("203.0.113", "posts", 200, 0, 0, 10);
+        assertEquals(1, page.total());
+        assertEquals("/api/posts/one", page.items().getFirst().path());
+        var detail = service.accessDetail(page.items().getFirst().id()).orElseThrow();
+        assertEquals("{\"ok\":true}", detail.responseBody());
+        assertEquals(List.of("[REDACTED]"), detail.responseHeaders().get("Set-Cookie"));
+        assertEquals(0, service.accessLogs("198.51.100", "", null, 0, 0, 10).total());
     }
 
     private void record(String ip, String path, int status, long requestBytes, long responseBytes) {

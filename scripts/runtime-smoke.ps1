@@ -98,6 +98,22 @@ try {
     if (-not ($dashboard.alerts | Where-Object type -eq 'SUSPICIOUS_PATH')) {
         throw 'Expected a SUSPICIOUS_PATH alert from /wp-admin/.'
     }
+    $ipTimeline = $dashboard.timeline | Where-Object { $_.requests -gt 0 -and $_.ips.Count -gt 0 } | Select-Object -First 1
+    if (-not $ipTimeline) {
+        throw 'Expected timeline buckets to contain per-IP request counts.'
+    }
+
+    $recordsApi = "$baseUrl/apis/console.api.traffic-monitor.halo.run/v1alpha1/records?minutes=60&limit=100"
+    $records = Invoke-RestMethod -Uri $recordsApi -Headers $headers -TimeoutSec 30
+    $captured = $records.items | Where-Object bodyCaptured -eq $true | Select-Object -First 1
+    if ($records.total -lt 5 -or -not $captured) {
+        throw "Expected filtered access records with captured response bodies, got total=$($records.total)."
+    }
+    $detailApi = "$baseUrl/apis/console.api.traffic-monitor.halo.run/v1alpha1/records/$($captured.id)"
+    $detail = Invoke-RestMethod -Uri $detailApi -Headers $headers -TimeoutSec 30
+    if (-not $detail.bodyCaptured -or $null -eq $detail.responseHeaders) {
+        throw 'Expected response headers and body capture in access detail.'
+    }
 
     [pscustomobject]@{
         haloVersion = '2.25.4'
@@ -107,6 +123,9 @@ try {
         totalBytes = $dashboard.summary.totalBytes
         alerts = $dashboard.alerts.Count
         suspiciousPathAlert = $true
+        accessRecords = $records.total
+        responseDetailCaptured = $true
+        timelineIpBreakdown = $true
         status = 'passed'
         stdout = $stdout
         stderr = $stderr

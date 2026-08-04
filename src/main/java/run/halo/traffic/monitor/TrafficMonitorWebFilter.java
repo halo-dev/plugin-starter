@@ -171,10 +171,13 @@ public class TrafficMonitorWebFilter implements AdditionalWebFilter {
         response.setStatusCode(HttpStatus.FORBIDDEN);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
         response.getHeaders().set("X-Traffic-Monitor-Blocked", "true");
-        long retryAfter = Math.max(1, (block.expiresAt() - now + 999) / 1_000L);
-        response.getHeaders().set("Retry-After", Long.toString(retryAfter));
+        if (block.expiresAt() > 0) {
+            long retryAfter = Math.max(1, (block.expiresAt() - now + 999) / 1_000L);
+            response.getHeaders().set("Retry-After", Long.toString(retryAfter));
+        }
         byte[] body = ("{\"status\":403,\"title\":\"IP blocked\",\"expiresAt\":"
-            + block.expiresAt() + "}").getBytes(StandardCharsets.UTF_8);
+            + block.expiresAt() + ",\"permanent\":" + (block.expiresAt() == 0) + "}")
+            .getBytes(StandardCharsets.UTF_8);
         return response.writeWith(Mono.just(response.bufferFactory().wrap(body)));
     }
 
